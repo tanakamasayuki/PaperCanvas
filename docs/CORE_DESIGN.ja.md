@@ -126,7 +126,9 @@ PaperCanvas::Receipt r(384);          // 印字可能幅(px)
 ```cpp
 uint16_t addText(const char* text);              // 現在の設定で積む
 uint16_t addText(const char* text, const TextOptions& opt);
-uint16_t addRow(...);                            // 行内の列レイアウト。§4.2.1（**未確定**）
+uint16_t addRow(const char* left, const char* right);                     // 2 列
+uint16_t addRow(const char* left, const char* center, const char* right); // 3 列
+uint16_t addRow(const char* const* cells, size_t n);                      // 任意の列数
 uint16_t addImage(const Bitmap& src, const ImageOptions& opt = {});
 uint16_t addImage(const uint8_t* gray8, uint16_t w, uint16_t h, const ImageOptions& opt = {});
 uint16_t addSpace(uint16_t px);                  // 空白
@@ -136,80 +138,108 @@ uint16_t addRule(char c);                        // 文字で埋める区切り�
 
 戻り値は**その要素が占めた高さ(px)**。`height()` は現在の総高さを返す。
 
-### 4.2.1 `addRow` — 行内の列レイアウト（**未確定。詰め直す**）
+### 4.2.1 `addRow` — 行内の列レイアウト（**実装済み。レビュー待ち**）
 
-> **この節は仕様が固まっていない。** 方向性と論点だけ記録してある。実装（フェーズ 2）に入る前に決める。
+> 推奨形で実装し、`tests/row/` が通っている。**API の見直しは可能**。レビューでの論点は末尾に挙げる。
 
-**確定していること**
+**なぜ必要か**
 
-- 「品名は左、金額は右」はレシートで最も多い行であり、**空白でパディングする方法は成立しない**（プロポーショナルフォントでは幅が揃わず、必要な空白数を利用者が数えることになる）。行内の列配置はライブラリが持つ
-- **1 列（左／中／右のいずれかへ寄せる）と 2 列（左右）は簡単**。基準位置が紙面の端と中心線だけで決まり、列幅を決める必要がない
-- **3 列以上はグリッドが要る**。列幅の配分を決めないと位置が定まらず、行ごとに揺れて表として読めなくなる
+「品名は左、金額は右」はレシートで最も多い行だが、**空白でパディングする方法は成立しない**。プロポーショナルフォントでは空白の幅が揃わず、等幅でも必要な空白数を利用者が数えることになる。行内の列配置はライブラリが持つ。
 
-**未確定 — 簡易ヘルパーとグリッドの関係**
+**採った形 — グリッド 1 本**
 
-1 列・2 列を「別実装の簡易ヘルパー」として持つか、「定義済みのグリッド」として持つか。後者なら実装が 1 本で済むが、簡単なケースに列定義の概念が漏れる。**後で決める。**
-
-なお 1 列は既存の `addText` + `setAlign(Align)` でも表現できるので、`addRow` の 1 列版が要るかどうかもここで一緒に決める。
-
-**有力な方向 — グリッド（列を先に定義する）**
-
-3 列以上について、**列幅（px または %）と寄せを持つ列定義を先に置き、そこへセルを流し込む**形にする。
+列を宣言し、そこへセルを流し込む。**1 列・2 列の簡易ヘルパーは別実装にせず、暗黙の列定義として同じ経路に載せた。** 実装が 1 本で済み、簡単なケースでも列の概念が破綻しない。
 
 ```cpp
 using namespace PaperCanvas;
 
-// 列を定義する。以後の addRow に効く
+// 明示的な列定義。以後の addRow に効く
 const Column cols[] = {
-  Column::percent(50, Align::Left),     // 品名
-  Column::percent(20, Align::Center),   // 数量
-  Column::rest(      Align::Right),     // 金額（残り幅）
+  Column::percent(55, Align::Left, '.'),  // 品名（リーダーはドット）
+  Column::percent(15, Align::Center),     // 数量
+  Column::rest(       Align::Right),      // 金額（残り幅）
 };
 r.setColumns(cols, 3);
+r.setColumnGap(8);                        // 列間の間隔(px)
 
-r.addRow({"コーヒー",     "x2", "¥960"});
-r.addRow({"サンドイッチ", "x1", "¥620"});
+r.addRow("コーヒー",     "x2", "¥960");
+r.addRow("サンドイッチ", "x1", "¥620");
+```
+
+```cpp
+// 列定義なしなら暗黙のレイアウト。レシート行の一番普通の形になる
+r.clearColumns();
+r.addRow("コーヒー", "¥960");     // 品名が残り幅、金額は必要な幅だけ右端に
 ```
 
 ```cpp
 struct Column {
-  enum class Unit : uint8_t { Px, Percent, Rest };
-  Unit     unit;
-  float    value;                    // Px なら px、Percent なら 0..100、Rest なら未使用
-  Align    align  = Align::Left;
-  char     leader = '\0';            // このセルを埋める文字
-  uint16_t gap    = 8;               // 次の列との最小間隔(px)
+  enum class Unit : uint8_t { Px, Percent, Rest, Auto };
+  Unit  unit   = Unit::Rest;
+  float value  = 0;              // Px なら px、Percent なら 0..100
+  Align align  = Align::Left;
+  char  leader = '\0';           // このセルと次のセルの間を埋める文字
 
-  static constexpr Column px(float v, Align a);
-  static constexpr Column percent(float v, Align a);
-  static constexpr Column rest(Align a);          // 残り幅を取る。1 行に 1 つまで
+  static constexpr Column px(float v, Align a, char leader = '\0');
+  static constexpr Column percent(float v, Align a, char leader = '\0');
+  static constexpr Column rest(Align a, char leader = '\0');      // 残りを分け合う
+  static constexpr Column autoFit(Align a, char leader = '\0');   // そのセルに必要な幅
 };
 ```
 
-この形なら、
+**API**
 
-- 列数がいくつでも入る（`addRow` の overload を増やさなくてよい）
-- 列が**縦に必ず揃う**。行ごとの文字長に左右されない
-- ラベル側でも矩形幅に対して同じ規則で使える
+```cpp
+bool setColumns(const Column* cols, size_t n);   // 定義はコピーされる。最大 8 列
+void clearColumns();                             // 暗黙のレイアウトへ戻す
+void setColumnGap(uint16_t px);                  // 既定 8
 
-**詰めるべき論点**
+uint16_t addRow(const char* const* cells, size_t n);
+uint16_t addRow(const char* const* cells, size_t n, const RowOptions& opt);
+uint16_t addRow(const char* left, const char* right);                       // 2 列
+uint16_t addRow(const char* left, const char* center, const char* right);   // 3 列
+```
 
-| 論点 | 内容 |
+**暗黙のレイアウト**（`setColumns` していないとき、または列数が一致しないとき）
+
+先頭列が `Rest(Left)`、以降が `Auto`（最後は `Right`、間は `Center`）。品名は伸び縮みし、数字は必要な幅だけ取って右端に付く。レシート行の性質そのもの。
+
+**列幅の解決規則（決定的。add 時に 1 回だけ）**
+
+1. `Auto` はその行のセルの自然幅を取る
+2. `Px` は指定値
+3. `Percent` は「幅 − 列間の合計」に対する割合。**切り捨て**
+4. `Rest` は残りを均等割り。**割り切れない分は最初の `Rest` 列へ**
+5. `Rest` が無く余りがある場合は最後の列が受け取る
+6. 合計が幅を超えた場合は**末尾の列から削る**（読者が縦に追う先頭列の位置を保つため）。`Warning_TextClipped` を立てる
+
+すべて整数演算で、割り算は切り捨てに統一している。浮動小数の丸めに依存する箇所を作らないため。
+
+**セルが列幅に収まらないとき**
+
+- `wrap` が真なら**その列の中で折り返す**。行の高さは全セルの最大値。`Warning_TextWrapped`
+- 偽ならクリップ。`Warning_TextClipped`
+- **列は絶対に押し広げない。** 押し広げると以降の行がずれ、`addRow` の存在理由が消える
+
+列幅が固定である以上「右端の列が押し出される」状況が起きないので、たたき台にあった段階的な縮退規則は不要になった。
+
+**リーダー文字**
+
+列に持たせる。描画時、そのセルの実際の文字の終わりから**次のセルの文字の始まり**まで埋める（列の端までではない。次のセルの余白の下へ潜り込ませないため）。折り返したセルでは 1 行目にのみ引く。
+
+**空セル**
+
+空文字列は幅 0 として扱う。`addRow("合計", "", "¥1580")` で 3 列 API のまま「中央を空ける」が書ける。
+
+**レビューでの論点**
+
+| 論点 | 現状 |
 | --- | --- |
-| **簡易ヘルパーとグリッドの関係** | 1 列・2 列を別実装にするか、定義済みグリッドにするか。1 列版がそもそも要るか（`addText` + `setAlign` で足りる） |
-| 列定義の持ち方 | `Receipt` の設定として持つ（以後の行に効く）か、行ごとに渡すか、両方か |
-| `%` の基準 | 紙面幅か、余白を引いた印字幅か。ラベルでは矩形幅 |
-| 端数の丸め | `%` から px への変換で合計が幅と合わないときの配分規則。**決定性のため規則を固定する必要がある** |
-| セルが列幅に収まらないとき | 折り返す／クリップする／列を押し広げる。列を押し広げると縦が揃わなくなる |
-| `Rest` が複数あるとき | 均等割りか、エラーか |
-| リーダー文字 | 列に持たせるか（上記案）、行オプションに持たせるか |
-| 列定義の API 形 | 配列＋長さ（上記案）か、`std::initializer_list` か、ビルダーか。**C++11 下限・動的確保なしの制約下で決める** |
-
-**収まらないときの共通規則（これは維持する）**
-
-- **右端の列（金額）は絶対に切らない**
-- 溢れたときは警告を立てるが**生成は続行する**（`Warning::TextClipped` / `TextWrapped`）
-- 空文字列のセルは幅 0 として扱い、描画しない
+| 1 列版 `addRow` が要るか | 用意していない。`addText` + `setAlign` で足りると判断した |
+| 列定義を行ごとに渡す overload | 用意していない。ページ設定のみ |
+| `Auto` 列の扱い | その行のセル幅で決まるので、行ごとに幅が変わりうる。列を跨いで揃えたいなら `Px` / `Percent` を使う |
+| 最大列数 8 | `kMaxColumns`。スタック上の一時配列の都合 |
+| 列間 `gap` | 全列共通。列ごとに変えたい要求が出るかは未知 |
 
 ```cpp
 uint16_t width()  const;   // 印字可能幅
@@ -242,7 +272,7 @@ PaperCanvas::Label lb(400, 240);      // 幅・高さ(px)
 
 ```cpp
 void addText(const Rect& r, const char* text, const TextOptions& opt = {});
-void addRow(const Rect& r, ...);          // §4.2.1（**未確定**）
+void addRow(const Rect& r, const char* const* cells, size_t n);   // §4.2.1
 void addImage(const Rect& r, const Bitmap& src, const ImageOptions& opt = {});
 void addRect(const Rect& r, bool fill = false, uint16_t thickness = 1);
 void addLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t thickness = 1);
@@ -387,17 +417,17 @@ void makeReceipt() {
 
   r.setAlign(PaperCanvas::Align::Left);
   r.addRule('-');
-  // 行内の列レイアウトは §4.2.1（未確定）。以下は方向性のイメージ
+  // 行内の列レイアウト（§4.2.1）
   static const PaperCanvas::Column cols[] = {
     PaperCanvas::Column::percent(55, PaperCanvas::Align::Left),    // 品名
     PaperCanvas::Column::percent(15, PaperCanvas::Align::Center),  // 数量
     PaperCanvas::Column::rest(       PaperCanvas::Align::Right),   // 金額
   };
   r.setColumns(cols, 3);
-  r.addRow({"コーヒー",     "x2", "¥960"});
-  r.addRow({"サンドイッチ", "x1", "¥620"});
+  r.addRow("コーヒー",     "x2", "¥960");
+  r.addRow("サンドイッチ", "x1", "¥620");
   r.addRule('-');
-  r.addRow({"合計", "", "¥1580"});
+  r.addRow("合計", "", "¥1580");
 
   BarcodeKit::Code128 bc;
   bc.encode("T20260815-0042", buf, sizeof(buf));

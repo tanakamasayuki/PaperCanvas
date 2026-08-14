@@ -93,6 +93,26 @@ class PageBase {
   void setMemoryLimit(size_t bytes) { _memLimit = bytes; }
   void setUsePsram(bool on) { _usePsram = on; }
 
+  /// Column layout for subsequent rows. The definition is copied.
+  ///
+  /// Pass nothing (or n == 0) to go back to the implicit layout, which sizes the
+  /// last cells to their content and gives the first cell the rest — the shape
+  /// a receipt line usually wants.
+  bool setColumns(const Column* cols, size_t n) {
+    _columns.clear();
+    _columnCount = 0;
+    if (!cols || n == 0) { return true; }
+    if (n > kMaxColumns) { n = kMaxColumns; }
+    if (_columns.append(cols, n * sizeof(Column)) == (size_t)-1) { return false; }
+    _columnCount = (uint8_t)n;
+    return true;
+  }
+
+  void clearColumns() { setColumns(nullptr, 0); }
+
+  /// Space kept between adjacent columns.
+  void setColumnGap(uint16_t px) { _columnGap = px; }
+
   //--------------------------------------------------------------------------
   // State
   //--------------------------------------------------------------------------
@@ -105,6 +125,7 @@ class PageBase {
   void clear() {
     _elements.clear();
     _text.clear();
+    _cells.clear();
     _warnings = 0;
   }
 
@@ -294,6 +315,144 @@ class PageBase {
   }
 
   //--------------------------------------------------------------------------
+  // Rows
+  //--------------------------------------------------------------------------
+
+  /// Resolve column boxes for one row, store its cells, and return the row
+  /// height. Returns 0 if the row could not be stored.
+  ///
+  /// Widths are resolved here and never again. Order matters and is fixed:
+  /// Auto columns take what their own cell needs, Px columns take their stated
+  /// width, Percent columns take a share of what is left after the gaps, and
+  /// Rest columns divide whatever remains. Every division truncates and the
+  /// remainder goes to the first Rest column, so the arithmetic is exact and
+  /// reproducible rather than dependent on float rounding.
+  uint16_t buildRow(Element& e, const char* const* texts, size_t n, const Rect& box) {
+    if (n == 0 || n > kMaxColumns) { return 0; }
+
+    Column implicit[kMaxColumns];
+    const Column* cols = columnsFor(n, implicit);
+
+    uint16_t widths[kMaxColumns];
+    resolveWidths(cols, n, e, texts, box.w, widths);
+
+    const size_t cellStart = _cells.used();
+    uint16_t rowH = 0;
+    int16_t x = box.x;
+
+    for (size_t i = 0; i < n; ++i) {
+      Cell c;
+      c.x = x;
+      c.w = widths[i];
+      c.align = cols[i].align;
+      c.leader = cols[i].leader;
+
+      Element tmp = e;  // carries font/size/wrap for measuring this cell
+      const char* s = texts[i] ? texts[i] : "";
+      if (e.wrap ? !storeWrapped(s, tmp, c.w) : !storeText(s, tmp)) { return 0; }
+      c.textOffset = tmp.textOffset;
+      c.textLength = tmp.textLength;
+
+      const uint16_t h = textBlockHeight(e, (const char*)(_text.data() + c.textOffset));
+      if (h > rowH) { rowH = h; }
+      if (!e.wrap && textWidthOf(e, (const char*)(_text.data() + c.textOffset),
+                                 c.textLength) > c.w) {
+        warn(Warning_TextClipped);
+      }
+
+      if (_cells.append(&c, sizeof(Cell)) == (size_t)-1) { return 0; }
+      x = (int16_t)(x + c.w + _columnGap);
+    }
+
+    e.cellOffset = (uint32_t)cellStart;
+    e.cellCount = (uint8_t)n;
+    e.rect = box;
+    e.rect.h = rowH;
+    return rowH;
+  }
+
+  const Cell* cellAt(const Element& e, size_t i) const {
+    return (const Cell*)(_cells.data() + e.cellOffset) + i;
+  }
+
+  static constexpr size_t kMaxColumns = 8;
+
+ private:
+  /// The layout used when none was set: the trailing cells take exactly what
+  /// they need and the first takes the rest. That is the shape of a receipt
+  /// line — a name that can run long, then figures that must not be squeezed.
+  const Column* columnsFor(size_t n, Column* scratch) const {
+    if (_columnCount == n) { return (const Column*)_columns.data(); }
+    scratch[0] = Column::rest(Align::Left);
+    for (size_t i = 1; i < n; ++i) {
+      scratch[i] = Column::autoFit(i + 1 == n ? Align::Right : Align::Center);
+    }
+    return scratch;
+  }
+
+  void resolveWidths(const Column* cols, size_t n, const Element& e,
+                     const char* const* texts, uint16_t boxW, uint16_t* out) {
+    const uint16_t gaps = (uint16_t)(_columnGap * (n - 1));
+    uint32_t usable = boxW > gaps ? (uint32_t)(boxW - gaps) : 0u;
+
+    uint32_t taken = 0;
+    size_t restCount = 0;
+    for (size_t i = 0; i < n; ++i) {
+      uint32_t w = 0;
+      switch (cols[i].unit) {
+        case Column::Unit::Px:
+          w = (uint32_t)(cols[i].value < 0 ? 0 : cols[i].value);
+          break;
+        case Column::Unit::Percent:
+          w = (uint32_t)((usable * (uint32_t)(cols[i].value < 0 ? 0 : cols[i].value)) / 100u);
+          break;
+        case Column::Unit::Auto:
+          w = measureNatural(e, texts[i]);
+          break;
+        case Column::Unit::Rest:
+          ++restCount;
+          break;
+      }
+      out[i] = (uint16_t)(w > usable ? usable : w);
+      taken += out[i];
+    }
+
+    if (taken > usable) {
+      // Over-committed: shrink from the last column back, so the leading
+      // columns (the ones a reader scans down) keep their position.
+      uint32_t excess = taken - usable;
+      for (size_t i = n; i-- > 0 && excess;) {
+        const uint16_t give = out[i] < excess ? out[i] : (uint16_t)excess;
+        out[i] = (uint16_t)(out[i] - give);
+        excess -= give;
+      }
+      warn(Warning_TextClipped);
+      taken = usable;
+    }
+
+    uint32_t left = usable - taken;
+    if (restCount) {
+      const uint32_t each = left / restCount;
+      uint32_t extra = left - each * restCount;
+      for (size_t i = 0; i < n; ++i) {
+        if (cols[i].unit != Column::Unit::Rest) { continue; }
+        out[i] = (uint16_t)(each + extra);
+        extra = 0;  // the remainder all goes to the first Rest column
+      }
+    } else if (left && n) {
+      out[n - 1] = (uint16_t)(out[n - 1] + left);
+    }
+  }
+
+  uint16_t measureNatural(const Element& e, const char* s) {
+    if (!s || !*s) { return 0; }
+    auto& m = const_cast<PageBase*>(this)->measurer();
+    const_cast<PageBase*>(this)->applyFont(m, e);
+    return (uint16_t)m.textWidth(s);
+  }
+
+ protected:
+  //--------------------------------------------------------------------------
   // Drawing
   //--------------------------------------------------------------------------
 
@@ -309,6 +468,7 @@ class PageBase {
   void drawElement(LGFXVirtualCanvas& g, const Element& e) {
     switch (e.type) {
       case ElementType::Text: drawText(g, e); break;
+      case ElementType::Row: drawRow(g, e); break;
       case ElementType::Image: drawImage(g, e); break;
       case ElementType::Line: g.fillRect(e.rect.x, e.rect.y, e.rect.w, e.rect.h, kBlack); break;
       case ElementType::Rule: drawRule(g, e); break;
@@ -358,6 +518,73 @@ class PageBase {
       if (!nl) { break; }
       line = nl + 1;
       y = (int16_t)(y + step);
+    }
+  }
+
+  void drawRow(LGFXVirtualCanvas& g, const Element& e) {
+    if (e.cellCount == 0) { return; }
+    if (e.font) { g.setFont(e.font); }
+    g.setTextSize(e.size);
+    g.setTextDatum(lgfx::textdatum_t::top_left);
+    g.setTextColor(e.invert ? kWhite : kBlack);
+    if (e.invert) { g.fillRect(e.rect.x, e.rect.y, e.rect.w, e.rect.h, kBlack); }
+
+    auto& m = measurer();
+    applyFont(m, e);
+    const uint16_t lh = (uint16_t)m.fontHeight();
+    const int16_t step = (int16_t)(lh + (e.lineSpacing > 0 ? e.lineSpacing : 0));
+
+    // Drawn text extents, kept so a leader can be run from the end of one cell
+    // to the start of the next rather than to the column edge — otherwise the
+    // dots would run under the next cell's own padding.
+    int16_t textEnd[kMaxColumns];
+    int16_t textStart[kMaxColumns];
+
+    for (uint8_t i = 0; i < e.cellCount; ++i) {
+      const Cell* c = cellAt(e, i);
+      const char* s = (const char*)(_text.data() + c->textOffset);
+      int16_t y = e.rect.y;
+      textStart[i] = (int16_t)(c->x + c->w);
+      textEnd[i] = c->x;
+
+      char buf[256];
+      const char* line = s;
+      while (true) {
+        const char* nl = strchr(line, '\n');
+        const size_t len = nl ? (size_t)(nl - line) : strlen(line);
+        const size_t copy = len < sizeof(buf) ? len : sizeof(buf) - 1;
+        memcpy(buf, line, copy);
+        buf[copy] = '\0';
+
+        const uint16_t w = (uint16_t)m.textWidth(buf);
+        int16_t x = c->x;
+        if (c->align == Align::Center) { x = (int16_t)(c->x + ((int)c->w - w) / 2); }
+        else if (c->align == Align::Right) { x = (int16_t)(c->x + (int)c->w - w); }
+        if (copy) {
+          g.drawString(buf, x, y);
+          if (x < textStart[i]) { textStart[i] = x; }
+          if ((int16_t)(x + w) > textEnd[i]) { textEnd[i] = (int16_t)(x + w); }
+        }
+
+        if (!nl) { break; }
+        line = nl + 1;
+        y = (int16_t)(y + step);
+      }
+    }
+
+    // Leaders run on the first line only; a wrapped cell has no single baseline
+    // for them to sit on.
+    for (uint8_t i = 0; i + 1 < e.cellCount; ++i) {
+      const Cell* c = cellAt(e, i);
+      if (!c->leader) { continue; }
+      const char lead[2] = {c->leader, '\0'};
+      const uint16_t cw = (uint16_t)m.textWidth(lead);
+      if (cw == 0) { continue; }
+      const int16_t from = (int16_t)(textEnd[i] + cw);
+      const int16_t to = (int16_t)(textStart[i + 1] - cw);
+      for (int16_t x = from; x + (int16_t)cw <= to; x = (int16_t)(x + cw)) {
+        g.drawString(lead, x, e.rect.y);
+      }
     }
   }
 
@@ -501,8 +728,13 @@ class PageBase {
 
   uint16_t _warnings = Warning_None;
 
+  uint16_t _columnGap = 8;
+  uint8_t _columnCount = 0;
+
   Arena _elements;
   Arena _text;
+  Arena _cells;
+  Arena _columns;
   lgfx::LGFX_Sprite _measure;
 
  private:

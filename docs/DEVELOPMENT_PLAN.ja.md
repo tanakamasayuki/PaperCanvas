@@ -15,8 +15,8 @@
 | ブラウザツールの方針決め | 置き場所と公開方法は確定。**フォント方針は未確定**（[WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3） |
 | **フェーズ 0 スパイク** | **完了。`tests/monopanel/` が通る**（[DECISIONS.ja.md](DECISIONS.ja.md) D3 に結果） |
 | **フェーズ 1（出力の芯）** | **完了。** `Common.h` / `Dither.h` / `MonoPanel.h` + `tests/bitformat/` / `tests/dither/` |
-| **フェーズ 2（レシート）** | **`addRow` 以外は完了。** `Element.h` / `PageBase.h` / `Receipt.h` + `tests/receipt_layout/` |
-| `addRow` | **API 未確定**（[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1）。ここで止めている |
+| **フェーズ 2（レシート）** | **完了。** `Element.h` / `PageBase.h` / `Receipt.h` + `tests/receipt_layout/` / `tests/row/` |
+| `addRow` | グリッドで実装済み。**API はレビュー待ち**（[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 末尾） |
 | `Label.h` | 未着手 |
 | `tests/` の残り | `text/` `image/` `label_layout/` `warnings/` `failure/` `barcode*` が未着手 |
 | `docs/` のブラウザツール | 未着手 |
@@ -54,7 +54,7 @@
 
 **`split_invariance/` はこの段階で必ず通す。** ここを後回しにすると、分割起因の不具合がレイアウト実装の中に埋もれる。
 
-10. **`addRow` の API を確定させる**（[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 の論点表を潰す）→ 実装 → `tests/row/`
+10. `addRow`（グリッド）と `tests/row/`
 11. 折り返しと `tests/text/`
 12. 画像のスケール・フィットと `tests/image/`
 
@@ -116,7 +116,7 @@
 
 | 論点 | いつ決めるか |
 | --- | --- |
-| **`addRow` の API 形（グリッド／簡易ヘルパーの切り分け）** | **フェーズ 2 の実装前。[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 に論点表がある** |
+| `addRow` の API 細部（1 列版の要否、行ごとの列指定、`Auto` の扱い、最大 8 列） | レビュー時。[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 末尾 |
 | `PAPERCANVAS_MAX_ELEMENTS` の既定（動的確保するか固定長か） | フェーズ 2。実装しながら決める |
 | 帯コールバックの帯高さを利用者が指定できるようにするか | フェーズ 1。プリンターの転送単位に合わせたい需要が出るかもしれない |
 | `addRow` の 4 列以上（セル配列 API） | v1.1。用途が出てから |

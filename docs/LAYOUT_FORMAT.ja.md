@@ -80,9 +80,9 @@
 `align`: `left` / `center` / `right`。`valign`: `top` / `middle` / `bottom`。
 `text` 中の `\n` は明示改行として保持する。
 
-### 4.2 `row`（**未確定**）
+### 4.2 `row`
 
-> C++ 側の API が未確定（[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1）。この形式もそれに合わせて確定させる。以下は方向性のイメージ。
+C++ 側の `addRow`（[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1）に対応する。
 
 ```json
 {
@@ -97,9 +97,11 @@
 }
 ```
 
-`columns[i].width` は `"120px"` / `"55%"` / `"rest"` のいずれか。`cells` は `columns` と同じ要素数。空文字列のセルは幅 0 として扱う。
+`columns[i].width` は `"120px"` / `"55%"` / `"rest"` / `"auto"` のいずれか。`columns[i].align` は `left` / `center` / `right`、`columns[i].leader` は 1 文字。`cells` は `columns` と同じ要素数で、空文字列のセルは幅 0 として扱う。
 
-1 列・2 列の簡略記法（`columns` を省略して `cells` だけ書く）を認めるかは、C++ 側の簡易ヘルパーの扱いと合わせて決める。
+`columns` を省略すると C++ 側と同じ暗黙のレイアウト（先頭が `rest`、以降が `auto`、最後が右寄せ）になる。列間は行の `gap`、省略時は 8。
+
+列幅の解決規則は [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 と同一でなければならない。**ここがずれるとツールのプレビューと実際の出力がずれる**ので、[WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3.6 のクロス検証が押さえる対象になる。
 
 ### 4.3 `image`
 

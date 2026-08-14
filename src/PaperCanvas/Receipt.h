@@ -59,6 +59,40 @@ class Receipt : public detail::PageBase {
     return place(e);
   }
 
+  /// A row of cells laid out in the current columns (see setColumns()).
+  ///
+  /// With no columns set, the last cells take exactly the width they need and
+  /// the first takes the rest — so `addRow("Coffee", "960")` puts the name on
+  /// the left and the figure hard against the right margin, which is what a
+  /// receipt line is. Column widths resolve once per row, so a run of rows
+  /// lines up regardless of how long the individual names are.
+  uint16_t addRow(const char* const* cells, size_t n) {
+    return addRow(cells, n, RowOptions{});
+  }
+
+  uint16_t addRow(const char* const* cells, size_t n, const RowOptions& opt) {
+    detail::Element e = makeDefault(detail::ElementType::Row);
+    if (opt.font) { e.font = opt.font; }
+    if (opt.size > 0) { e.size = opt.size; }
+    if (opt.lineSpacing) { e.lineSpacing = opt.lineSpacing; }
+    e.wrap = opt.wrap || e.wrap;
+    e.invert = opt.invert;
+
+    Rect box{(int16_t)_marginLeft, 0, contentWidth(), 0};
+    if (buildRow(e, cells, n, box) == 0) { return 0; }
+    return place(e);
+  }
+
+  uint16_t addRow(const char* left, const char* right) {
+    const char* cells[2] = {left, right};
+    return addRow(cells, 2);
+  }
+
+  uint16_t addRow(const char* left, const char* center, const char* right) {
+    const char* cells[3] = {left, center, right};
+    return addRow(cells, 3);
+  }
+
   uint16_t addImage(const Bitmap& src, const ImageOptions& opt = ImageOptions{}) {
     return addImageRaw(src.data, src.width, src.height, src.rowBytes,
                        detail::PixelFormat::Mono1bpp, opt);

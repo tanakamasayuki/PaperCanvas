@@ -47,8 +47,9 @@
 
 | 論点 | 場所 |
 | --- | --- |
-| `MonoPanel` が成立するか（スパイクで確認） | [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) §2 フェーズ 0 |
-| **行内の列レイアウト（`addRow`）の API 形** | [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 の論点表 |
-| **ブラウザツールのプレビュー忠実性（フォント）** | [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3 |
+| **ブラウザツールのプレビュー忠実性（フォント）** | [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3。まだ着手前 |
+| `addRow` の API 細部 | [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 末尾。実装済みでレビュー待ち |
+
+決着したもの: `MonoPanel` が成立するか（[DECISIONS.ja.md](DECISIONS.ja.md) D3、`tests/monopanel/` で実測確認済み）。
 
 そのほかの保留事項は [DECISIONS.ja.md](DECISIONS.ja.md) §2 にまとまっています。

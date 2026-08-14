@@ -33,12 +33,13 @@
 
 **仕様**
 
-- [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) — ラベル専用ブラウザツールと共有する JSON 形式。v0.1 では形式定義のみ（パーサは v0.2）。
+- [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) — ブラウザツールと共有する JSON 形式。v1.0 では形式定義のみ（パーサは v1.1）。
+- [WEB_TOOL.ja.md](WEB_TOOL.ja.md) — ブラウザツール。置き場所と公開方法、**プレビュー忠実性のフォント問題**（未確定）。
 
 **プロセス**
 
 - [TEST_PLAN.ja.md](TEST_PLAN.ja.md) — テスト方針、ディレクトリ構成、スケッチと pytest の出力プロトコル。中核は**分割数不変性**。
-- [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) — 現在地、v0.1.0 のゴール、実装の順序、残りの検討事項。
+- [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) — 現在地、v1.0.0 のゴール、実装の順序、残りの検討事項。
 
 ## 未確定の論点
 
@@ -46,7 +47,8 @@
 
 | 論点 | 場所 |
 | --- | --- |
-| **行内の列レイアウト（`addRow`）の API 形** | [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 の論点表 |
 | `MonoPanel` が成立するか（スパイクで確認） | [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) §2 フェーズ 0 |
+| **行内の列レイアウト（`addRow`）の API 形** | [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 の論点表 |
+| **ブラウザツールのプレビュー忠実性（フォント）** | [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3 |
 
 そのほかの保留事項は [DECISIONS.ja.md](DECISIONS.ja.md) §2 にまとまっています。

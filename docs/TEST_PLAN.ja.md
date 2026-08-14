@@ -4,7 +4,7 @@
 
 ## 1. 方針
 
-**自動テストはホスト実行のみ。** 実機での確認は examples を使った手動確認とし、手順は [MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) に置く。
+**自動テストはホスト実行のみ。** 実機での確認は examples を使った手動確認とし、手順は `MANUAL_TEST.ja.md`（未作成） に置く。
 
 兄弟プロジェクト [LGFXVirtualCanvas](https://github.com/tanakamasayuki/LGFXVirtualCanvas) と [BarcodeKit](https://github.com/tanakamasayuki/BarcodeKit) の `tests/` の作りをそのまま踏襲する。
 
@@ -112,7 +112,7 @@ Python 側は `#SPLIT` 行の md5 が全行一致することを検証し、不�
 
 ## 5. 実機での手動確認
 
-自動化しないもの。[MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) に手順と記録を置く。
+自動化しないもの。`MANUAL_TEST.ja.md`（未作成） に手順と記録を置く。
 
 - 実際の感熱プリンターで印字し、**バーコードが実スキャナで読めるか**
 - ディザをかけた写真が実用的な見た目になるか

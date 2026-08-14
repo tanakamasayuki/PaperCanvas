@@ -4,7 +4,7 @@
 
 ## 1. 現在地
 
-**仕様策定が完了し、実装はこれから。** ソースコードはまだ 1 行も無い。
+**フェーズ 0（スパイク）完了。設計の土台は実測で確認できた。** フェーズ 1 の実装中。
 
 | 項目 | 状況 |
 | --- | --- |
@@ -13,8 +13,10 @@
 | レイアウト JSON の形式定義 | 完了 |
 | リリースツールの導入 | 完了（`tools/bump_version.py` / `.github/workflows/release.yml`） |
 | ブラウザツールの方針決め | 置き場所と公開方法は確定。**フォント方針は未確定**（[WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3） |
-| `src/` の実装 | **未着手** |
-| `tests/` の整備 | 未着手 |
+| **フェーズ 0 スパイク** | **完了。`tests/monopanel/` が通る**（[DECISIONS.ja.md](DECISIONS.ja.md) D3 に結果） |
+| `Common.h` / `Dither.h` / `MonoPanel.h` | 実装済み。テストは `tests/monopanel/` のみ |
+| `Receipt.h` / `Label.h` | 未着手 |
+| `tests/` の残り | 未着手 |
 | `docs/` のブラウザツール | 未着手 |
 | examples | 未着手 |
 | 利用者向けドキュメント（README / GUIDE / API） | 未着手 |
@@ -25,18 +27,13 @@
 
 **スパイクを最初に置く。** ここが崩れると設計の土台（[DECISIONS.ja.md](DECISIONS.ja.md) D3）が変わるため、他の作業を積む前に確かめる。
 
-### フェーズ 0 — スパイク（最優先）
+### フェーズ 0 — スパイク（**完了**）
 
-1. `tests/monopanel/` を書く。`lgfx::Panel_Device` 派生の最小シンクを作り、`grayscale_8bit` のタイル sprite を `pushSprite` したときに `pixelcopy_t::fp_copy` が期待どおりグレー値を供給するか確認する
-   - 既知のグレー勾配を流し込み、**二値化前**の行バッファが一致すること
-   - フック自体が効いていることを先に確認する（非ゼロのグレー値が観測できること）
-2. `LGFXVirtualScreen` にこのシンクを渡し、タイルが正しい `y` 位置で届くこと、端数タイルが正しいことを確認する
+`tests/monopanel/` が 8 項目すべて通る。結果と、そこで見つかった実装上の落とし穴は [DECISIONS.ja.md](DECISIONS.ja.md) D3 にある。
 
-**結果によって分岐する。**
+分岐の判断は「期待どおり動く → フェーズ 1 へ」で確定した。退路（1bpp スプライト案）は使わない。
 
-- 期待どおり動く → フェーズ 1 へ
-- `fp_copy` がグレーを供給しない → `MonoPanel` 側で RGB から自前で輝度計算する（`grayscale_t` の係数 `(r + 2g + b) / 4` に合わせる）。設計は変わらない
-- `Panel_Device` 派生が `LGFXVirtualScreen` から使えない → D3 の退路（1bpp スプライトをパネル役にする）へ切り替え、ディザと帯出力を v1.1 送りにする。**公開 API は変えない**
+**このテストは以後も回し続ける。** `MonoPanel` は LovyanGFX の内部挙動に依存しているので、LovyanGFX や LGFXVirtualCanvas を上げたときに最初に壊れるのはここになる。
 
 ### フェーズ 1 — 出力の芯
 
@@ -91,8 +88,9 @@
 27. `MANUAL_TEST.ja.md` と実機確認
 28. `tools/release_hooks/pre_release_commit.py` — ZIP からツール本体を除外
 29. BarcodeKit を `dir:` からバージョン指定へ切り替え
-30. **`memo.ja.md` を削除**
-31. **v1.0.0 リリース**（初回リリース）
+30. **`CHANGELOG.md` の初回リリース項目を書く** — BarcodeKit の書式（`(EN)` / `(JA)` の対で、何をどういう理由でそうしたかを書く）。**リリース前は細かい作業ログを積まない。初回リリースの項目だけでよい**
+31. **`memo.ja.md` を削除**
+32. **v1.0.0 リリース**（初回リリース）
 
 ## 3. v1.0.0 のゴール
 

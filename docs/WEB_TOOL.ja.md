@@ -4,6 +4,8 @@
 
 **このリポジトリに含める。** GitHub Pages で公開する。
 
+公開 URL: **https://tanakamasayuki.github.io/PaperCanvas/**
+
 参考にする兄弟プロジェクト:
 
 - [phomemo-d30-web-print](https://github.com/tanakamasayuki/phomemo-d30-web-print) — 想定する UI と規模。`docs/` に素の HTML/JS/CSS
@@ -22,6 +24,8 @@ docs/
 ```
 
 **`docs/` に置き、GitHub Pages の「Deploy from a branch: main / `docs`」で公開する。Action は使わない。**
+
+公開先は **https://tanakamasayuki.github.io/PaperCanvas/** （`docs/index.html` がトップ）。パス参照はすべて `docs/` からの相対にする。リポジトリ名がパスに入るため、絶対パス（`/src/...`）を書くとローカルでは動いて公開先で 404 になる。
 
 - 兄弟 2 つ（LGFXScreenBuilder / phomemo-d30-web-print）がこの形。esp-flashjs が Action を使っているのは npm ビルド（`web/` → `site/`）があるからで、ビルドレスなら設定 1 箇所で済む
 - ビルド工程を持たないので、Arduino ライブラリのリポジトリに Node プロジェクトを併設せずに済む

@@ -60,7 +60,7 @@ enum Warning : uint16_t {
   Warning_None            = 0,
   Warning_TextClipped     = 1 << 0,
   Warning_TextWrapped     = 1 << 1,
-  Warning_ImageScaled     = 1 << 2,
+  Warning_ImageScaled     = 1 << 2,  ///< reduced, so detail was lost; enlarging is not reported
   Warning_ImageClipped    = 1 << 3,
   Warning_OutOfBounds     = 1 << 4,
   Warning_BarcodeTooSmall = 1 << 5,

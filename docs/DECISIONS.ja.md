@@ -111,6 +111,14 @@ PaperCanvas は LovyanGFX なしでは動かない。フォント描画・図形
 
 これは BarcodeKit が `BarcodeKitDraw.h` を別ヘッダにした構図と同じ。
 
+**実装で分かった改良（採用済み）**: 配置ロジックは BarcodeKit の**型を名指しする必要がなかった**。必要なのは `width()` / `height()` / `module()` / `quiet*()` / `barExtends()` という**形**だけで、これは BarcodeKit の API 形状そのものである。そこで配置ロジックを `PaperCanvas/Barcode.h`（BarcodeKit 非依存）に置き、`addBarcode()` をテンプレートメンバにした。結果、
+
+- `PaperCanvas.h` 単体でも BarcodeKit のシンボルを受け取れる（依存は増えない）
+- 同じ形を持つ別のエンコーダがそのまま挿さる
+- `PaperCanvasBarcode.h` は「BarcodeKit を一緒に include する便宜ヘッダ」になり、**依存を宣言する場所**という役割は残る
+
+利用者から見た D9 の話（「BarcodeKit を使うなら `PaperCanvasBarcode.h`」）は変わらない。
+
 **採らなかった案**:
 - *画像として受けるのみ* — 疎結合は最大だが、上記の定型作業を全利用者が書くことになる。
 - *`PaperCanvas.h` に統合* — 使い始めは楽だが、バーコードを使わない利用者にも依存を強いる。

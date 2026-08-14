@@ -130,7 +130,14 @@ struct Element {
   bool invert;
 
   // --- image ----------------------------------------------------------------
+  /// Either a pointer the caller keeps alive (a logo in flash, typically), or,
+  /// when `pixelsOwned` is set, an offset into the page's own pixel arena. A
+  /// barcode is generated at run time and has nowhere else to live, so it is
+  /// copied in; a caller's static image is not, because copying a large logo
+  /// into RAM would be a poor trade.
   const uint8_t* pixels;
+  uint32_t pixelOffset;
+  bool pixelsOwned;
   uint16_t srcW;
   uint16_t srcH;
   uint16_t srcRowBytes;

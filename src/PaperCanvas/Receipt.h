@@ -54,7 +54,7 @@ class Receipt : public detail::PageBase {
     e.rect.x = (int16_t)_marginLeft;
     e.rect.w = contentWidth();
 
-    if (e.wrap ? !storeWrapped(text, e, contentWidth()) : !storeText(text, e)) { return 0; }
+    if (!storeFitted(text, e, contentWidth())) { return 0; }
     e.rect.h = textBlockHeight(e, textOf(e));
     return place(e);
   }
@@ -101,6 +101,27 @@ class Receipt : public detail::PageBase {
   uint16_t addImage(const uint8_t* gray8, uint16_t w, uint16_t h,
                     const ImageOptions& opt = ImageOptions{}) {
     return addImageRaw(gray8, w, h, w, detail::PixelFormat::Gray8, opt);
+  }
+
+  /// A barcode, sized to the printable width and stacked like any other element.
+  ///
+  /// Returns 0 and raises Warning_BarcodeTooSmall if the symbol will not fit at
+  /// even one pixel per module. Nothing is drawn in that case: an unreadable
+  /// barcode on a receipt is worse than a visible gap, because it is only
+  /// discovered at the till.
+  template <class T>
+  uint16_t addBarcode(const T& bc, const BarcodeOptions& opt = BarcodeOptions{}) {
+    detail::Element e = makeDefault(detail::ElementType::Image);
+    BarcodeLayout layout;
+    bool tooSmall = false;
+    if (!buildBarcode(e, bc, opt, contentWidth(), 0, layout, tooSmall)) {
+      if (tooSmall) { warn(Warning_BarcodeTooSmall); }
+      return 0;
+    }
+    Rect box{(int16_t)_marginLeft, 0, contentWidth(), layout.height};
+    uint16_t ignored = 0;
+    e.rect = fitImage(e, box, ignored);  // honours the alignment; never rescales
+    return place(e);
   }
 
   uint16_t addSpace(uint16_t px) {

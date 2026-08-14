@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Barcode.h"
 #include "Common.h"
 #include "Dither.h"
 #include "Element.h"
@@ -53,6 +54,10 @@ class Arena {
   }
 
   size_t appendByte(uint8_t b) { return append(&b, 1); }
+
+  /// Claim bytes already reserved. Used when the caller writes into the arena
+  /// directly rather than handing over a source buffer.
+  void advance(size_t n) { _used += n; }
 
   uint8_t* data() { return _data; }
   const uint8_t* data() const { return _data; }
@@ -126,6 +131,7 @@ class PageBase {
     _elements.clear();
     _text.clear();
     _cells.clear();
+    _pixels.clear();
     _warnings = 0;
   }
 
@@ -204,6 +210,27 @@ class PageBase {
 
   void warn(uint16_t bits) { _warnings |= bits; }
 
+  /// Reserve `n` zeroed bytes in the pixel arena. Returns false if it could not
+  /// be had; on success `offset` is where it landed.
+  ///
+  /// The arena can move when it grows, so elements hold an offset rather than a
+  /// pointer and resolve it at draw time.
+  bool allocPixels(size_t n, uint32_t& offset) {
+    const size_t at = _pixels.used();
+    if (!_pixels.reserve(at + n)) { return false; }
+    if (_pixels.append(nullptr, 0) == (size_t)-1) { return false; }
+    memset(_pixels.data() + at, 0, n);
+    _pixels.advance(n);
+    offset = (uint32_t)at;
+    return true;
+  }
+
+  uint8_t* pixelsAt(uint32_t offset) { return _pixels.data() + offset; }
+
+  const uint8_t* resolvePixels(const Element& e) const {
+    return e.pixelsOwned ? (_pixels.data() + e.pixelOffset) : e.pixels;
+  }
+
   //--------------------------------------------------------------------------
   // Measuring
   //--------------------------------------------------------------------------
@@ -268,6 +295,62 @@ class PageBase {
     if ((c & 0xF0) == 0xE0) { return 3; }
     if ((c & 0xF8) == 0xF0) { return 4; }
     return 1;
+  }
+
+  /// Rewrite `src` into the arena with each line truncated to `limit` pixels.
+  ///
+  /// Clipping happens here, at character granularity, rather than by handing an
+  /// over-long string to the renderer and relying on a clip rectangle: the
+  /// canvas does not expose one, and a cell allowed to draw past its box would
+  /// overdraw the next column. Cutting between characters also avoids leaving
+  /// half a glyph on the edge.
+  bool storeClipped(const char* src, Element& e, uint16_t limit) {
+    if (limit == 0) { return storeText(src, e); }
+    auto& m = measurer();
+    applyFont(m, e);
+
+    const size_t start = _text.used();
+    uint16_t lineW = 0;
+    bool clipped = false;
+    bool dropping = false;
+    char ch[8];
+
+    for (const char* p = src; *p;) {
+      if (*p == '\n') {
+        if (_text.appendByte('\n') == (size_t)-1) { return false; }
+        lineW = 0;
+        dropping = false;
+        ++p;
+        continue;
+      }
+      const size_t n = utf8Advance(p);
+      if (!dropping) {
+        memcpy(ch, p, n);
+        ch[n] = '\0';
+        const uint16_t cw = (uint16_t)m.textWidth(ch);
+        if (lineW + cw > limit) {
+          dropping = true;
+          clipped = true;
+        } else {
+          if (_text.append(p, n) == (size_t)-1) { return false; }
+          lineW = (uint16_t)(lineW + cw);
+        }
+      }
+      p += n;
+    }
+    if (_text.appendByte('\0') == (size_t)-1) { return false; }
+
+    e.textOffset = (uint32_t)start;
+    e.textLength = (uint16_t)(_text.used() - start - 1);
+    if (clipped) { warn(Warning_TextClipped); }
+    return true;
+  }
+
+  /// Fit `src` to `limit` pixels the way `e` asks: wrapped onto more lines, or
+  /// truncated. Either way the stored text is final and the draw path only
+  /// walks it.
+  bool storeFitted(const char* src, Element& e, uint16_t limit) {
+    return e.wrap ? storeWrapped(src, e, limit) : storeClipped(src, e, limit);
   }
 
   /// Rewrite `src` into the arena with newlines inserted so no line exceeds
@@ -349,16 +432,12 @@ class PageBase {
 
       Element tmp = e;  // carries font/size/wrap for measuring this cell
       const char* s = texts[i] ? texts[i] : "";
-      if (e.wrap ? !storeWrapped(s, tmp, c.w) : !storeText(s, tmp)) { return 0; }
+      if (!storeFitted(s, tmp, c.w)) { return 0; }
       c.textOffset = tmp.textOffset;
       c.textLength = tmp.textLength;
 
       const uint16_t h = textBlockHeight(e, (const char*)(_text.data() + c.textOffset));
       if (h > rowH) { rowH = h; }
-      if (!e.wrap && textWidthOf(e, (const char*)(_text.data() + c.textOffset),
-                                 c.textLength) > c.w) {
-        warn(Warning_TextClipped);
-      }
 
       if (_cells.append(&c, sizeof(Cell)) == (size_t)-1) { return 0; }
       x = (int16_t)(x + c.w + _columnGap);
@@ -369,6 +448,42 @@ class PageBase {
     e.rect = box;
     e.rect.h = rowH;
     return rowH;
+  }
+
+  /// Render a barcode into the page's own pixel arena and fill in an image
+  /// element pointing at it. Returns false if it could not be stored; sets
+  /// `tooSmall` when the symbol cannot be drawn readably, which is the one case
+  /// where PaperCanvas refuses to draw rather than warning and carrying on
+  /// (docs/DECISIONS.ja.md D11).
+  template <class T>
+  bool buildBarcode(Element& e, const T& bc, const BarcodeOptions& opt, uint16_t boxW,
+                    uint16_t boxH, BarcodeLayout& layout, bool& tooSmall) {
+    tooSmall = false;
+    layout = barcodeLayout(bc, opt, boxW, boxH);
+    if (!layout.fits) {
+      tooSmall = true;
+      return false;
+    }
+    const size_t need = barcodeBufferSize(layout);
+    uint32_t offset = 0;
+    if (!allocPixels(need, offset)) { return false; }
+    if (!renderBarcode(bc, layout, pixelsAt(offset), need)) { return false; }
+
+    e.pixels = nullptr;
+    e.pixelOffset = offset;
+    e.pixelsOwned = true;
+    e.srcW = layout.width;
+    e.srcH = layout.height;
+    e.srcRowBytes = rowBytes(layout.width);
+    e.format = PixelFormat::Mono1bpp;
+    e.fit = Fit::None;  // a barcode is drawn at its computed size, never rescaled
+    e.scale = 1.0f;
+    e.mono = Mono::Threshold;
+    e.threshold = 128;
+    e.align = opt.align;
+    e.valign = opt.valign;
+    e.invert = opt.invert;
+    return true;
   }
 
   const Cell* cellAt(const Element& e, size_t i) const {
@@ -499,7 +614,16 @@ class PageBase {
 
     if (e.invert) { g.fillRect(e.rect.x, e.rect.y, e.rect.w, e.rect.h, kBlack); }
 
+    // Vertical placement inside the box. For a receipt the box is exactly the
+    // block, so this is a no-op there; it is labels that put a short block in a
+    // tall rectangle.
+    const uint16_t blockH = (uint16_t)(lineCount(s) * lh +
+                                       (lineCount(s) - 1) * (e.lineSpacing > 0 ? e.lineSpacing : 0));
     int16_t y = e.rect.y;
+    if (e.valign == VAlign::Middle) { y = (int16_t)(e.rect.y + ((int)e.rect.h - (int)blockH) / 2); }
+    else if (e.valign == VAlign::Bottom) { y = (int16_t)(e.rect.y + (int)e.rect.h - (int)blockH); }
+
+    const int32_t bottom = (int32_t)e.rect.y + e.rect.h;
     const char* line = s;
     char buf[256];
     while (true) {
@@ -509,11 +633,15 @@ class PageBase {
       memcpy(buf, line, copy);
       buf[copy] = '\0';
 
-      const uint16_t w = (uint16_t)m.textWidth(buf);
-      int16_t x = e.rect.x;
-      if (e.align == Align::Center) { x = (int16_t)(e.rect.x + (int)(e.rect.w - w) / 2); }
-      else if (e.align == Align::Right) { x = (int16_t)(e.rect.x + (int)e.rect.w - w); }
-      g.drawString(buf, x, y);
+      // A line that would not fit whole is not drawn at all. Half a line of
+      // text at the edge of a label reads as damage; nothing reads as missing.
+      if ((int32_t)y + lh <= bottom) {
+        const uint16_t w = (uint16_t)m.textWidth(buf);
+        int16_t x = e.rect.x;
+        if (e.align == Align::Center) { x = (int16_t)(e.rect.x + (int)(e.rect.w - w) / 2); }
+        else if (e.align == Align::Right) { x = (int16_t)(e.rect.x + (int)e.rect.w - w); }
+        g.drawString(buf, x, y);
+      }
 
       if (!nl) { break; }
       line = nl + 1;
@@ -617,7 +745,8 @@ class PageBase {
   /// Both paths index the dither by absolute page coordinates, so the result is
   /// still independent of the tile count.
   void drawImage(LGFXVirtualCanvas& g, const Element& e) {
-    if (!e.pixels || e.srcW == 0 || e.srcH == 0) { return; }
+    const uint8_t* px = resolvePixels(e);
+    if (!px || e.srcW == 0 || e.srcH == 0) { return; }
     const Rect& d = e.rect;
     if (d.w == 0 || d.h == 0) { return; }
 
@@ -638,7 +767,7 @@ class PageBase {
       const int16_t py = (int16_t)(d.y + dy);
       for (uint16_t dx = 0; dx < rowLimit; ++dx) {
         const uint16_t sx = (uint16_t)(((uint32_t)dx * stepX) >> 16);
-        uint8_t gray = samplePixel(e, sx, sy);
+        uint8_t gray = samplePixel(e, px, sx, sy);
         if (e.invert) { gray = (uint8_t)(255 - gray); }
         const bool black =
             isBlack(gray, e.mono, e.threshold, (uint16_t)(d.x + dx), (uint16_t)py);
@@ -648,11 +777,11 @@ class PageBase {
     }
   }
 
-  static uint8_t samplePixel(const Element& e, uint16_t x, uint16_t y) {
+  static uint8_t samplePixel(const Element& e, const uint8_t* px, uint16_t x, uint16_t y) {
     if (e.format == PixelFormat::Gray8) {
-      return e.pixels[(size_t)y * e.srcRowBytes + x];
+      return px[(size_t)y * e.srcRowBytes + x];
     }
-    const uint8_t byte = e.pixels[(size_t)y * e.srcRowBytes + (x >> 3)];
+    const uint8_t byte = px[(size_t)y * e.srcRowBytes + (x >> 3)];
     const bool bit = (byte >> (7 - (x & 7))) & 1;
     return bit ? 0 : 255;  // 1 = black in PaperCanvas's own 1bpp format
   }
@@ -690,7 +819,10 @@ class PageBase {
     }
     if (w == 0) { w = 1; }
     if (h == 0) { h = 1; }
-    if (w != e.srcW || h != e.srcH) { warnings |= Warning_ImageScaled; }
+    // Only a reduction is worth reporting. Enlarging is what Fit::Contain and
+    // Fit::Scale were asked to do, and it loses nothing; shrinking discards
+    // detail, which is how a logo that looked fine on screen comes out as mush.
+    if (w < e.srcW || h < e.srcH) { warnings |= Warning_ImageScaled; }
     if (w > box.w || h > box.h) { warnings |= Warning_ImageClipped; }
 
     Rect r;
@@ -734,6 +866,7 @@ class PageBase {
   Arena _elements;
   Arena _text;
   Arena _cells;
+  Arena _pixels;
   Arena _columns;
   lgfx::LGFX_Sprite _measure;
 

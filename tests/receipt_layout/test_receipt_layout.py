@@ -53,10 +53,11 @@ def test_receipt_layout(dut):
     # height arithmetic self-consistent, so the count is checked separately.
     assert count == 9, f"expected 9 elements, stored {count}\n{output}"
 
-    # Scaling the image 2x and wrapping the closing line are both expected, and
-    # nothing else should have been flagged.
+    # Wrapping the closing line is expected. Enlarging the image 2x is not
+    # reported: Warning_ImageScaled means detail was lost, and only a reduction
+    # loses any.
     warn = int(h.group(5), 16)
-    assert warn == 0x0006, f"warnings 0x{warn:04x}, expected ImageScaled|TextWrapped\n{output}"
+    assert warn == 0x0002, f"warnings 0x{warn:04x}, expected TextWrapped only\n{output}"
 
     splits = re.findall(r"#SPLIT limit=(\d+) ok=(\d)", output)
     assert len(splits) == 5, f"expected 5 split renders, got {len(splits)}\n{output}"

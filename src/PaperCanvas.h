@@ -17,7 +17,9 @@
 
 #include "papercanvas_version.h"
 
+#include "PaperCanvas/Barcode.h"
 #include "PaperCanvas/Common.h"
 #include "PaperCanvas/Element.h"
 #include "PaperCanvas/MonoPanel.h"
+#include "PaperCanvas/Label.h"
 #include "PaperCanvas/Receipt.h"

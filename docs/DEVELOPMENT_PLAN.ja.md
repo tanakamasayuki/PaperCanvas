@@ -4,7 +4,7 @@
 
 ## 1. 現在地
 
-**フェーズ 0（スパイク）完了。設計の土台は実測で確認できた。** フェーズ 1 の実装中。
+**フェーズ 0〜4 完了。ライブラリ本体は一通り動く。** 残るテストの穴埋めと、フェーズ 5（ブラウザツール）以降。
 
 | 項目 | 状況 |
 | --- | --- |
@@ -17,8 +17,9 @@
 | **フェーズ 1（出力の芯）** | **完了。** `Common.h` / `Dither.h` / `MonoPanel.h` + `tests/bitformat/` / `tests/dither/` |
 | **フェーズ 2（レシート）** | **完了。** `Element.h` / `PageBase.h` / `Receipt.h` + `tests/receipt_layout/` / `tests/row/` |
 | `addRow` | グリッドで実装済み。**API はレビュー待ち**（[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 末尾） |
-| `Label.h` | 未着手 |
-| `tests/` の残り | `text/` `image/` `label_layout/` `warnings/` `failure/` `barcode*` が未着手 |
+| **フェーズ 3（ラベル）** | **完了。** `Label.h` + `tests/label_layout/` |
+| **フェーズ 4（バーコード連携）** | **完了。** `PaperCanvas/Barcode.h` / `PaperCanvasBarcode.h` + `tests/barcode/`（zxing-cpp で往復デコード） |
+| `tests/` の残り | `text/` `image/` `warnings/` `failure/` `build_*` が未着手 |
 | `docs/` のブラウザツール | 未着手 |
 | examples | 未着手 |
 | 利用者向けドキュメント（README / GUIDE / API） | 未着手 |

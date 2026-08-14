@@ -14,17 +14,17 @@ src/
     MonoPanel.h             Panel_Device 派生の 1bpp シンク。グレー→二値化→パック
     MonoSink.h              MonoPanel を載せた LGFX_Device
     Dither.h                閾値 / Bayer 4x4 / Bayer 8x8
+    Barcode.h               バーコード配置（倍率・余白・ガードバー）。エンコーダ非依存
     Element.h               描画要素レコード（自己完結）
     PageBase.h              Receipt / Label 共通の内部エンジン（非公開）
     Receipt.h
     Label.h
-  PaperCanvasBarcode/
-    BarcodeKit.h            BarcodeKit のシンボルを要素へ変換
 ```
 
 - **ヘッダオンリー。`.cpp` は置かない。** すべて `inline` または `static constexpr`
 - `PaperCanvas.h` は LovyanGFX と LGFXVirtualCanvas に依存する。BarcodeKit には依存しない
 - `PaperCanvasBarcode.h` は `PaperCanvas.h` と BarcodeKit に依存する。逆はない
+- **バーコード配置は `PaperCanvas/Barcode.h` にあり、エンコーダを名指ししない。** 必要なのは `width()` / `height()` / `module()` / `quiet*()` / `barExtends()` という形だけで、`addBarcode()` はテンプレートメンバ。`PaperCanvasBarcode.h` は BarcodeKit を一緒に引き込む便宜ヘッダ（§8）
 - 抽象基底も `virtual` も使わない（`MonoPanel` が LovyanGFX の `Panel_Device` を継承する箇所を除く。ここは LovyanGFX 側の要求）
 
 ## 2. 全体の流れ

@@ -14,9 +14,11 @@
 | リリースツールの導入 | 完了（`tools/bump_version.py` / `.github/workflows/release.yml`） |
 | ブラウザツールの方針決め | 置き場所と公開方法は確定。**フォント方針は未確定**（[WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3） |
 | **フェーズ 0 スパイク** | **完了。`tests/monopanel/` が通る**（[DECISIONS.ja.md](DECISIONS.ja.md) D3 に結果） |
-| `Common.h` / `Dither.h` / `MonoPanel.h` | 実装済み。テストは `tests/monopanel/` のみ |
-| `Receipt.h` / `Label.h` | 未着手 |
-| `tests/` の残り | 未着手 |
+| **フェーズ 1（出力の芯）** | **完了。** `Common.h` / `Dither.h` / `MonoPanel.h` + `tests/bitformat/` / `tests/dither/` |
+| **フェーズ 2（レシート）** | **`addRow` 以外は完了。** `Element.h` / `PageBase.h` / `Receipt.h` + `tests/receipt_layout/` |
+| `addRow` | **API 未確定**（[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1）。ここで止めている |
+| `Label.h` | 未着手 |
+| `tests/` の残り | `text/` `image/` `label_layout/` `warnings/` `failure/` `barcode*` が未着手 |
 | `docs/` のブラウザツール | 未着手 |
 | examples | 未着手 |
 | 利用者向けドキュメント（README / GUIDE / API） | 未着手 |

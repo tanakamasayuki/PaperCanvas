@@ -31,7 +31,28 @@ The first run downloads the core and libraries into the arduino-cli environment,
 
   If this fails, the design changes ([../docs/DECISIONS.ja.md](../docs/DECISIONS.ja.md) D3). `MonoPanel` depends on LovyanGFX internals, so **this is the first thing that breaks when LovyanGFX or LGFXVirtualCanvas is upgraded.**
 
+**Tier 1 — output correctness**
+
+- `bitformat/` — pins the output byte layout: `rowBytes = (w+7)/8`, bit=1 is black, MSB first, spare bits at the end of a row are 0, and nothing is written past the page. Checked at widths 1 / 7 / 8 / 9 / 63 / 64 / 65 / 383 / 384.
+- `dither/` — threshold and Bayer. **A 0..255 gray ramp rendered at five memory limits must produce identical bytes**, which is the proof that ordered dithering does not depend on tile boundaries. Also the threshold boundary (`gray < threshold` is black), that Bayer is not a flat threshold, and that Bayer 4x4 repeats every 4 rows.
+- `receipt_layout/` — stacking. **`height()` must equal the margins plus every `add()`'s reported height** (two separate paths reaching the same number; drift means a silently clipped or padded page), short-buffer refusal, split invariance, `build()` == `stream()`, determinism, `clear()`, and that a setting change affects only later elements.
+
 The remaining tests are not written yet; the plan is in [../docs/TEST_PLAN.ja.md](../docs/TEST_PLAN.ja.md) §3.
+
+## Looking at the output
+
+`dither/output/*.pbm` and `receipt_layout/output/receipt.pbm` are 1bpp PBM (P4). **PaperCanvas's 1bpp and PBM both use 1 = black**, so the page bytes go in verbatim. Any image viewer opens them, or:
+
+```sh
+python3 -c "
+d=open('output/receipt.pbm','rb').read()
+i=d.index(b'\n',d.index(b'\n')+1)+1
+w,h=[int(x) for x in d[:i].decode().strip().split('\n')[1].split()]
+body=d[i:]; rb=(w+7)//8
+for y in range(0,h,4):
+    print(''.join('#' if (body[y*rb+(x>>3)]>>(7-(x&7)))&1 else '.' for x in range(0,w,3)))
+"
+```
 
 ## Writing sketches
 

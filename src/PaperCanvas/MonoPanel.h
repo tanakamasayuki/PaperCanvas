@@ -83,8 +83,14 @@ class MonoPanel : public lgfx::Panel_Device {
   uint16_t pageRowBytes() const { return _rowBytes; }
 
   /// Clear the destination to white. Bands have nothing to clear.
+  ///
+  /// Only the page itself is cleared, never the whole buffer: callers are
+  /// allowed to hand over something larger (a shared arena, a buffer sized for
+  /// the tallest receipt they expect) and the bytes past the page are theirs.
   void beginPage() {
-    if (_page) { memset(_page, 0, _pageSize); }
+    if (!_page) { return; }
+    const size_t pageBytes = (size_t)_rowBytes * _height;
+    memset(_page, 0, pageBytes < _pageSize ? pageBytes : _pageSize);
   }
 
   //--------------------------------------------------------------------------

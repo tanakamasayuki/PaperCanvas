@@ -31,7 +31,28 @@ uv run pytest monopanel -v
 
   ここが落ちたら設計が変わる（[../docs/DECISIONS.ja.md](../docs/DECISIONS.ja.md) D3）。`MonoPanel` は LovyanGFX の内部挙動に依存しているので、**LovyanGFX / LGFXVirtualCanvas を上げたときに最初に壊れるのはここ**。
 
+**Tier 1 — 出力の正しさ**
+
+- `bitformat/` — 出力バイト並びの固定。`rowBytes = (w+7)/8`、bit=1 が黒、MSB first、行末余りビットが 0、ページ外を書かないこと。幅 1 / 7 / 8 / 9 / 63 / 64 / 65 / 383 / 384 の境界で確認する
+- `dither/` — 閾値と Bayer。**0..255 の階調ランプをメモリ上限 5 通りで生成してバイト一致すること**（順序ディザがタイル境界に依存しないことの証明）、閾値の境界（`gray < threshold` が黒）、Bayer が平坦な閾値でないこと、4 行周期であること
+- `receipt_layout/` — 縦積み。**`height()` が「余白 + 各 add() の戻り値の総和」と一致すること**（この 2 つは別経路で同じ数に到達するので、ずれるとページが黙って切れるか余る）、バッファ不足の拒否、分割数不変性、`build()` と `stream()` の一致、決定性、`clear()`、設定が以後の要素にのみ効くこと
+
 残りのテストは未実装。計画は [../docs/TEST_PLAN.ja.md](../docs/TEST_PLAN.ja.md) §3。
+
+## 出力物を見る
+
+`dither/output/*.pbm` と `receipt_layout/output/receipt.pbm` は 1bpp の PBM（P4）で、**PaperCanvas の 1bpp と PBM はどちらも 1 = 黒**なのでページのバイト列がそのまま入っている。画像ビューアで開けるほか、次のようにも読める。
+
+```sh
+python3 -c "
+d=open('output/receipt.pbm','rb').read()
+i=d.index(b'\n',d.index(b'\n')+1)+1
+w,h=[int(x) for x in d[:i].decode().strip().split('\n')[1].split()]
+body=d[i:]; rb=(w+7)//8
+for y in range(0,h,4):
+    print(''.join('#' if (body[y*rb+(x>>3)]>>(7-(x&7)))&1 else '.' for x in range(0,w,3)))
+"
+```
 
 ## スケッチを書くときの注意
 

@@ -10,7 +10,8 @@
 /----------------------------------------------------------------------------*/
 #pragma once
 
-#include <LovyanGFX.hpp>
+#include "Gfx.h"
+
 #include <LGFXVirtualCanvas.h>
 
 #include <stdlib.h>
@@ -146,7 +147,6 @@ class PageBase {
     MonoSink sink;
     if (!beginSink(sink)) { return false; }
     sink.panel().setPageTarget(data, size);
-    sink.panel().beginPage();
     return runTiles(sink);
   }
 
@@ -887,7 +887,12 @@ class PageBase {
     LGFXVirtualScreen vs(sink);
     if (_memLimit) { vs.setMemoryLimit(_memLimit); }
     if (_usePsram) { vs.setUsePsram(true); }
+    // Everything that can fail happens before the destination is touched, so a
+    // build that returns false has written nothing and the caller can fix the
+    // problem and try again. Clearing first would leave a blanked page behind
+    // on a tile allocation failure, which reads as a successful blank print.
     if (!vs.begin()) { return false; }
+    sink.panel().beginPage();
     return vs.render(drawThunk, this);
   }
 };

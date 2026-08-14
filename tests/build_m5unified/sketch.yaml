@@ -1,0 +1,16 @@
+profiles:
+  host:
+    fqbn: lang-ship:host:host:mode=lgfx
+    port: socket://localhost
+    platforms:
+      - platform: lang-ship:host (1.4.5)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+      - LGFXVirtualCanvas (1.4.0)
+      - dir: ../../
+      # BarcodeKit is unreleased; referenced by directory until it ships.
+      - dir: ../../../BarcodeKit
+
+default_profile: host

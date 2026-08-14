@@ -12,7 +12,7 @@
 /----------------------------------------------------------------------------*/
 #pragma once
 
-#include <LovyanGFX.hpp>
+#include "Gfx.h"
 
 #include "Common.h"
 

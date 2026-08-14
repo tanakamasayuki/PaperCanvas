@@ -34,7 +34,8 @@
 **仕様**
 
 - [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) — ブラウザツールと共有する JSON 形式。v1.0 では形式定義のみ（パーサは v1.1）。
-- [WEB_TOOL.ja.md](WEB_TOOL.ja.md) — ブラウザツール。置き場所と公開方法、**プレビュー忠実性のフォント問題**（未確定）。
+- [WEB_TOOL.ja.md](WEB_TOOL.ja.md) — ブラウザツール。置き場所と公開方法、プレビュー忠実性。
+- [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) — **別リポジトリで作るフォント描画ライブラリへの要求仕様。** PaperCanvas の実装対象ではないが、ブラウザツールがこれに依存する。
 
 **プロセス**
 
@@ -47,7 +48,7 @@
 
 | 論点 | 場所 |
 | --- | --- |
-| **ブラウザツールのプレビュー忠実性（フォント）** | [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3。まだ着手前 |
+| **フォント描画ライブラリの要求仕様と着手** | [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §7。別リポジトリ。ブラウザツールはこれ待ち |
 | `addRow` の API 細部 | [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 末尾。実装済みでレビュー待ち |
 
 決着したもの: `MonoPanel` が成立するか（[DECISIONS.ja.md](DECISIONS.ja.md) D3、`tests/monopanel/` で実測確認済み）。

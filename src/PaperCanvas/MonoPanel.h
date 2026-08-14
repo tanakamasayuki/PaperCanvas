@@ -15,7 +15,7 @@
 /----------------------------------------------------------------------------*/
 #pragma once
 
-#include <LovyanGFX.hpp>
+#include "Gfx.h"
 
 #include <string.h>
 

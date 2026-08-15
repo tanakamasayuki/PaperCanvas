@@ -1,0 +1,15 @@
+profiles:
+  m5stack_core:
+    fqbn: esp32:esp32:m5stack_core
+    platforms:
+      - platform: esp32:esp32 (3.3.10)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - M5Unified (0.2.19)
+      - M5GFX (0.2.26)
+      - LGFXVirtualCanvas (1.4.0)
+      - dir: ../../
+      # BarcodeKit is unreleased; switch to a version once it ships.
+      - dir: ../../../BarcodeKit
+
+default_profile: m5stack_core

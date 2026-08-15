@@ -10,12 +10,17 @@
 | 確定した仕様 | 日英 | [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) |
 | 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)、[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、[DECISIONS.ja.md](DECISIONS.ja.md)、[TEST_PLAN.ja.md](TEST_PLAN.ja.md)、[DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)、`MANUAL_TEST.ja.md` |
 
-> **現在は実装前の段階です。** 利用者向けドキュメント（README / GUIDE / API）と examples はまだありません。現在地は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) を参照してください。
+> **C++ ライブラリは完成し、テスト 13 本が通っています。** 残るのはブラウザツールで、これは別リポジトリのフォント部品ライブラリ待ちです。現在地は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)。
 
 ## まずここから
 
 | やりたいこと | 読む文書 |
 | --- | --- |
+| **ライブラリが何をするものか知り、動くコードを見る** | **[../README.ja.md](../README.ja.md)** |
+| **はじめて使う。幅とフォントの決め方から知りたい** | **[GUIDE.ja.md](GUIDE.ja.md)** |
+| **思ったとおりに刷れない原因を切り分ける** | **[GUIDE.ja.md](GUIDE.ja.md) §10** |
+| **関数名と引数を引く** | **[API.ja.md](API.ja.md)** |
+| 自分の機器向けのスケッチを探す | [../examples/README.ja.md](../examples/README.ja.md) |
 | **何を作るライブラリで、どこまでが責務なのか知る** | **[REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)** |
 | **API の形と内部構造を知る** | **[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)** |
 | **なぜそう設計したのかを知る** | **[DECISIONS.ja.md](DECISIONS.ja.md)** |
@@ -24,6 +29,11 @@
 | テストの方針とケース一覧を知る | [TEST_PLAN.ja.md](TEST_PLAN.ja.md) |
 
 ## 文書一覧
+
+**利用者向け**
+
+- [GUIDE.ja.md](GUIDE.ja.md) — 入門ガイド。印字可能幅の決め方、フォントの選び方、列レイアウト、画像とディザ、**思ったとおりに刷れないときの確認手順**。
+- [API.ja.md](API.ja.md) — 公開 API の一覧。共通型、Receipt / Label、列、バーコード、コンパイル時スイッチ。
 
 **設計（全体像を掴むならこの順）**
 

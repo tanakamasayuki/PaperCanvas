@@ -1,0 +1,124 @@
+#######################################
+# Syntax colouring for PaperCanvas
+#
+# KEYWORD1 = classes and types
+# KEYWORD2 = methods and functions
+# LITERAL1 = constants
+#######################################
+
+#######################################
+# Classes and types (KEYWORD1)
+#######################################
+
+PaperCanvas	KEYWORD1
+Receipt	KEYWORD1
+Label	KEYWORD1
+Bitmap	KEYWORD1
+Rect	KEYWORD1
+Align	KEYWORD1
+VAlign	KEYWORD1
+Fit	KEYWORD1
+Mono	KEYWORD1
+Warning	KEYWORD1
+Column	KEYWORD1
+TextOptions	KEYWORD1
+ImageOptions	KEYWORD1
+RowOptions	KEYWORD1
+BarcodeOptions	KEYWORD1
+BarcodeLayout	KEYWORD1
+BandFn	KEYWORD1
+MonoPanel	KEYWORD1
+MonoSink	KEYWORD1
+
+#######################################
+# Methods and functions (KEYWORD2)
+#######################################
+
+# Settings
+setFont	KEYWORD2
+setTextSize	KEYWORD2
+setAlign	KEYWORD2
+setLineSpacing	KEYWORD2
+setWrap	KEYWORD2
+setMono	KEYWORD2
+setDpi	KEYWORD2
+setMargin	KEYWORD2
+setColumns	KEYWORD2
+clearColumns	KEYWORD2
+setColumnGap	KEYWORD2
+setMemoryLimit	KEYWORD2
+setUsePsram	KEYWORD2
+
+# Elements
+addText	KEYWORD2
+addRow	KEYWORD2
+addImage	KEYWORD2
+addBarcode	KEYWORD2
+addSpace	KEYWORD2
+addLine	KEYWORD2
+addRule	KEYWORD2
+addRect	KEYWORD2
+
+# State
+width	KEYWORD2
+height	KEYWORD2
+count	KEYWORD2
+warnings	KEYWORD2
+clearWarnings	KEYWORD2
+clear	KEYWORD2
+bufferSize	KEYWORD2
+
+# Generation
+build	KEYWORD2
+stream	KEYWORD2
+
+# Helpers
+rowBytes	KEYWORD2
+mmToPx	KEYWORD2
+pxToMm	KEYWORD2
+
+# Columns
+px	KEYWORD2
+percent	KEYWORD2
+rest	KEYWORD2
+autoFit	KEYWORD2
+
+# Barcodes
+barcodeLayout	KEYWORD2
+barcodeBufferSize	KEYWORD2
+renderBarcode	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+Left	LITERAL1
+Center	LITERAL1
+Right	LITERAL1
+Top	LITERAL1
+Middle	LITERAL1
+Bottom	LITERAL1
+
+None	LITERAL1
+Contain	LITERAL1
+Cover	LITERAL1
+Stretch	LITERAL1
+Scale	LITERAL1
+
+Threshold	LITERAL1
+Bayer4x4	LITERAL1
+Bayer8x8	LITERAL1
+
+Warning_None	LITERAL1
+Warning_TextClipped	LITERAL1
+Warning_TextWrapped	LITERAL1
+Warning_ImageScaled	LITERAL1
+Warning_ImageClipped	LITERAL1
+Warning_OutOfBounds	LITERAL1
+Warning_BarcodeTooSmall	LITERAL1
+
+PAPERCANVAS_NO_DITHER	LITERAL1
+PAPERCANVAS_VERSION_STR	LITERAL1
+PAPERCANVAS_VERSION_MAJOR	LITERAL1
+PAPERCANVAS_VERSION_MINOR	LITERAL1
+PAPERCANVAS_VERSION_PATCH	LITERAL1

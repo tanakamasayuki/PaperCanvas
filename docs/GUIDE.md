@@ -51,6 +51,8 @@ r.setFont(&fonts::Font2);        // Latin only, small
 
 **At 203 dpi, 1 mm is about 8 dots.** Thermal dots bleed a little beyond their nominal size, so text needs to be a size larger than it looks like it needs on screen.
 
+> The sizes below are arithmetic (203 dpi = 8 dots/mm); **the amount of bleed has not been measured on hardware**. Treat them as a starting point. See [MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) T2 (Japanese).
+
 | Font height | Actual size at 203 dpi | Use |
 | --- | --- | --- |
 | 12 px | ~1.5 mm | Fine print. **Usually too small** |
@@ -127,6 +129,8 @@ r.addImage(photo, w, h, {.mono = PaperCanvas::Mono::Bayer4x4});
 | `Bayer4x4` | Photographs; produces midtones |
 | `Bayer8x8` | Photographs; smoother, coarser pattern |
 
+> That ranking is **from looking at a screen**. On thermal paper the bleed fills in the pattern, so the two may swap places (see [MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) T3, Japanese).
+
 **You must keep the image data alive.** Unlike strings, images are not copied — duplicating a large logo into RAM would be a poor trade. It has to survive until `build()`.
 
 ## 7. Barcodes
@@ -144,6 +148,8 @@ if (r.addBarcode(bc, {.barHeight = 60}) == 0) {
 ```
 
 **A barcode too small to read is not drawn.** Printed, it would not be discovered until someone tried to scan it. You can also ask in advance:
+
+> The default (`moduleWidth = 0`) picks the largest whole scale that fits, which means one dot per module when width is tight. **Whether a real scanner reads one dot per module has not been verified** (see [MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) T4, Japanese). Set `moduleWidth` to 2 or more if you need certainty.
 
 ```cpp
 auto l = PaperCanvas::barcodeLayout(bc, opt, r.width());

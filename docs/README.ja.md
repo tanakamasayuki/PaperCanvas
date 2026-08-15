@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 使う人が読むもの | 日英 | `../README.ja.md`、`GUIDE.ja.md`、`API.ja.md`、`../examples/README.ja.md`、`../tests/README.ja.md` |
 | 確定した仕様 | 日英 | [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) |
-| 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)、[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、[DECISIONS.ja.md](DECISIONS.ja.md)、[TEST_PLAN.ja.md](TEST_PLAN.ja.md)、[DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)、`MANUAL_TEST.ja.md` |
+| 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)、[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、[DECISIONS.ja.md](DECISIONS.ja.md)、[TEST_PLAN.ja.md](TEST_PLAN.ja.md)、[DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)、[MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) |
 
 > **C++ ライブラリは完成し、テスト 13 本が通っています。** 残るのはブラウザツールで、これは別リポジトリのフォント部品ライブラリ待ちです。現在地は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)。
 
@@ -50,6 +50,7 @@
 **プロセス**
 
 - [TEST_PLAN.ja.md](TEST_PLAN.ja.md) — テスト方針、ディレクトリ構成、スケッチと pytest の出力プロトコル。中核は**分割数不変性**。
+- [MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) — 実機での確認手順。**自動テストで決着できないもの**（実スキャナで読めるか、滲みの程度）だけを扱う。**未実施**。
 - [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) — 現在地、v1.0.0 のゴール、実装の順序、残りの検討事項。
 
 ## 未確定の論点

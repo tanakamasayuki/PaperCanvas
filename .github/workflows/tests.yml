@@ -1,0 +1,137 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+# BarcodeKit is not released yet, so the barcode tests and the
+# ReceiptWithBarcode example refer to it by directory (`dir: ../../../BarcodeKit`).
+# Both repositories are therefore checked out as siblings under the workspace:
+#
+#   $GITHUB_WORKSPACE/
+#     PaperCanvas/   <- this repo
+#     BarcodeKit/
+#
+# which makes `PaperCanvas/tests/barcode/../../../BarcodeKit` resolve correctly.
+# Once BarcodeKit ships, those sketch.yaml entries become version pins and the
+# second checkout can go (docs/DEVELOPMENT_PLAN.ja.md §4).
+
+jobs:
+  # The host test suite. Everything runs headless on the lang-ship:host core
+  # with LovyanGFX's SDL backend; no hardware is involved.
+  # See docs/TEST_PLAN.ja.md.
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PaperCanvas
+        uses: actions/checkout@v4
+        with:
+          path: PaperCanvas
+
+      - name: Checkout BarcodeKit (unreleased dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: tanakamasayuki/BarcodeKit
+          path: BarcodeKit
+
+      - name: Install SDL2
+        # The host core builds LovyanGFX against SDL2 in mode=lgfx. Without it
+        # every test fails at link time rather than at compile time, which is a
+        # confusing way to find out the dependency is missing.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Initialize arduino-cli
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli core update-index
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install test dependencies
+        working-directory: PaperCanvas/tests
+        run: uv sync
+
+      - name: Run pytest
+        working-directory: PaperCanvas/tests
+        run: uv run pytest -v --html=report.html --self-contained-html
+
+      - name: Upload generated pages
+        # The .pbm files are how a layout regression gets diagnosed: the failure
+        # message says what differs, these show what it looked like.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-pages
+          path: PaperCanvas/tests/**/output/**
+          if-no-files-found: ignore
+
+      - name: Upload pytest HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: PaperCanvas/tests/report.html
+          if-no-files-found: ignore
+
+  # Compile-only checks for the user-facing examples. These catch the kind of
+  # breakage the host tests cannot: an include order that only fails under
+  # M5Unified, or an API that reads well in the docs and does not compile.
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [m5stack_core]
+    steps:
+      - name: Checkout PaperCanvas
+        uses: actions/checkout@v4
+        with:
+          path: PaperCanvas
+
+      - name: Checkout BarcodeKit (unreleased dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: tanakamasayuki/BarcodeKit
+          path: BarcodeKit
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Initialize arduino-cli
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli core update-index
+
+      - name: Compile examples
+        working-directory: PaperCanvas
+        run: |
+          set -e
+          for dir in examples/*/; do
+            name=$(basename "$dir")
+            if [ ! -f "$dir/sketch.yaml" ]; then continue; fi
+            if ! grep -q "^  ${{ matrix.profile }}:" "$dir/sketch.yaml"; then
+              echo "skip $name (no ${{ matrix.profile }} profile)"
+              continue
+            fi
+            echo "::group::$name"
+            arduino-cli compile --profile ${{ matrix.profile }} "$dir"
+            echo "::endgroup::"
+          done

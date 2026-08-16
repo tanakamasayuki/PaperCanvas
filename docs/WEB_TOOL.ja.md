@@ -87,6 +87,7 @@ memo §10 から引き継ぐもの。
 - `drawString` / `textWidth` / `fontHeight` / `measureText` / `DATUM` — PaperCanvas のツールが必要とするものが揃っている
 - MIT、依存ゼロ
 - **1bpp のビット並びが PaperCanvas と同一**（`stride = (width+7)>>3`、MSB first）。`bmp.data` をそのままページへ合成できる
+- CJK フォントは初回 `loadFont` で `tanakamasayuki.github.io` から取得される。**PaperCanvas の Pages と同一オリジン**なので、自前で同梱する意味がない（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §3.1）
 
 **したがってツールに残る二重実装はレイアウトだけになった。** 列幅の解決、折り返し位置、矩形配置。字形と送り幅はライブラリが出す。
 
@@ -114,7 +115,7 @@ tests/js_parity/
 
 ## 4. 未確定のまま残すこと
 
-- lgfx-font-tool の取り込み方（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5）— CJK フォントを自動取得に任せるか `docs/` に置くか、文字倍率の規則が一致するか、ビルドレス方針のもとで ESM をどう読むか
+- lgfx-font-tool の取り込み時に**実物で確認**すること 4 点（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5）。机上で決めず、着手時に動かして判断する
 - レシート対応をツールに含めるか（memo §10 はラベル専用と書いている。矩形配置とは UI が別物になる）
 - プリンターへの直接印刷（Web Bluetooth / Web Serial）を v1.0 に含めるか
 - i18n（LGFXScreenBuilder は日英対応の検査スクリプトまで持っている）

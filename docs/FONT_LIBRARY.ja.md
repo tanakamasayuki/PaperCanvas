@@ -45,16 +45,24 @@
 
 ## 3. PaperCanvas から見て決まったこと
 
-### 3.1 CJK フォントは自動取得される
+### 3.1 CJK フォントは自動取得に任せる（決定）
 
-npm パッケージには軽い 70 本（約 320KB）だけが入り、**CJK の大きいもの（合計 42MB）は初回 `loadFont` で GitHub Pages から取得される**。
+npm パッケージには軽い 70 本（約 320KB）だけが入り、**CJK の大きいもの（合計 42MB）は初回 `loadFont` で取得される**。PaperCanvas のブラウザツールは日本語が主用途なので、ここは必ず通る経路になる。
 
-PaperCanvas のブラウザツールは**日本語が主用途**なので、ここは必ず通る経路になる。
+**既定のまま使う。** 自前で `docs/` に同梱することは考えたが、意味がない。
 
-- 既定のまま使えば取得は自動。**オフラインでは動かない**
-- 自前でホストするなら `configureFontData({ baseUrl: ... })`
+```js
+// lgfx-font-tool src/fonts/loader.js
+const REMOTE_BASE = 'https://tanakamasayuki.github.io/LGFXFontToolJs/src/fonts/data/';
+```
 
-**決めるべきこと**: PaperCanvas の Pages（`docs/`）に置くフォントを絞って同梱するか、既定の自動取得に任せるか。ラベル用途なら常用漢字のサブセットで足りる可能性が高い。
+取得先は `tanakamasayuki.github.io`、PaperCanvas の Pages（`tanakamasayuki.github.io/PaperCanvas/`）と**同一オリジン**である。したがって、
+
+- 利用者から見れば**どちらにしても同じ配信元からのダウンロード**であり、同梱しても得られるものがない
+- **CORS も増えない**
+- 同梱すると 42MB を 2 か所で保守することになり、フォントの更新が二重管理になる
+
+自前でホストしたい利用者（社内ミラー、オフライン）は `configureFontData({ baseUrl: ... })` で切り替えられる。それはライブラリ側の機能なので、PaperCanvas 側で用意するものはない。
 
 ### 3.2 PaperCanvas 側に残る二重実装は「レイアウト」だけ
 
@@ -91,12 +99,15 @@ const mask = 0x80 >> (x & 7);                                        // setPixel
 
 詳細は本家のドキュメント（Beginner / Use-case / Advanced / Specification、いずれも日英）。
 
-## 5. 残る確認事項
+## 5. 実装時に確認すること
 
-`bmp.data` のビット並びは §4 のとおり**一致を確認済み**。残りは 3 点。
+決めるのではなく、**着手時に実物で確かめてから判断する。** 机上で決めても、実際に動かせば数分で分かることばかりなので。
 
-| 論点 | 内容 |
+| 確認すること | 見かた |
 | --- | --- |
-| CJK フォントの配布 | 自動取得に任せるか、`docs/` にサブセットを置くか（§3.1） |
-| `setTextSize` 相当 | PaperCanvas は文字倍率を持つ。ライブラリ側の倍率規則と一致するか |
-| ビルドレス方針との整合 | [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §1 は npm を使わない前提。ESM を CDN から読むか、`docs/` に置くか |
+| **文字倍率の規則** | PaperCanvas は `setTextSize` を持つ。ライブラリ側の倍率と同じ丸めか。§6 のクロス検証で最初に出るはず |
+| **ESM の読み方** | [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §1 はビルドレス方針。CDN（esm.sh / jsDelivr）から読むか、`dist/lgfx-font-tool.js` を `docs/` に置くか。**後者ならオフラインでも動き、バージョンも固定される** |
+| **CJK 取得のタイミング** | 初回 `loadFont` でどれくらい待つか。UI 上で待たせ方を考える必要があるか |
+| **`drawString` の基準位置** | PaperCanvas は `top_left` datum で描いている。ライブラリの既定と揃っているか |
+
+**確認済み**: `bmp.data` のビット並びは PaperCanvas と同一（§4）。CJK フォントは既定の自動取得に任せる（§3.1）。

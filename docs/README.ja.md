@@ -59,7 +59,7 @@
 
 | 論点 | 場所 |
 | --- | --- |
-| lgfx-font-tool の取り込み方（4 点） | [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 |
+| lgfx-font-tool の取り込み時の確認 4 点 | [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5。着手時に実物で確認する |
 | **v1.0 の範囲**（ライブラリ完成を待つか、ツールを v1.1 へ回すか） | [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §8 |
 | `addRow` の API 細部 | [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 末尾。実装済みでレビュー待ち |
 

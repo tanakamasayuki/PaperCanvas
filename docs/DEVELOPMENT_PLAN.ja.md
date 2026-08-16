@@ -79,7 +79,7 @@
 **依存していたフォント部品ライブラリは完成した** — [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md)）。**v1.0 までの経路で最も長い依存が解消したので、このフェーズは着手できる。**
 
 18. ~~フォント描画ライブラリを別リポジトリで作る~~ **完了**（[lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)）
-19. lgfx-font-tool を `docs/` から使えるようにする（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 の 4 点を決める）
+19. lgfx-font-tool を `docs/` から使えるようにする。**まず [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 の 4 点を実物で確認する**（決め打ちしない）
 20. `docs/index.html` — キャンバス設定、矩形の追加・ドラッグ・リサイズ、各種設定 UI
 21. モノクロプレビュー
 22. [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) の JSON 入出力と C++ コード生成
@@ -129,6 +129,6 @@
 | `addRow` の 4 列以上（セル配列 API） | v1.1。用途が出てから |
 | 列分割（縦帯）の露出 | v1.1 以降。用途が出てから |
 | レイアウト JSON のパーサ | v1.1。依存ライブラリの選定から |
-| lgfx-font-tool の取り込み方（4 点） | フェーズ 5 の着手時。[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 |
+| lgfx-font-tool の取り込み時の確認 4 点 | フェーズ 5 の着手時に**実物で確認**。[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 |
 | ツールのレシート対応 | フェーズ 5。ラベル専用で出すか |
 | クロス検証テストに Node を入れるか | フェーズ 5。ビルドレス方針と衝突する唯一の箇所 |

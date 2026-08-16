@@ -6,7 +6,7 @@
 
 **C++ ライブラリ側は完了。** 仕様どおり動き、テスト 13 本が通り、examples 5 本と利用者向けドキュメントが揃っている。
 
-**残るのはフェーズ 5（ブラウザツール）と実機確認。** ブラウザツールは別リポジトリのフォント部品ライブラリ待ち（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md)）。**そのライブラリは PaperCanvas に依存しないので、並行して進められる。**
+**残るのはフェーズ 5（ブラウザツール）と実機確認。** 待ちだったフォント部品ライブラリは [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool) として完成したので、**ブラウザツールに着手できる。**
 
 | 項目 | 状況 |
 | --- | --- |
@@ -14,7 +14,7 @@
 | 要件・設計・決定の文書化 | 完了 |
 | レイアウト JSON の形式定義 | 完了 |
 | リリースツールの導入 | 完了（`tools/bump_version.py` / `.github/workflows/release.yml`） |
-| ブラウザツールの方針決め | 置き場所と公開方法は確定。**フォント方針は未確定**（[WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3） |
+| ブラウザツールの方針決め | 完了。置き場所・公開方法・フォント方針すべて確定（[WEB_TOOL.ja.md](WEB_TOOL.ja.md)） |
 | **フェーズ 0 スパイク** | **完了。`tests/monopanel/` が通る**（[DECISIONS.ja.md](DECISIONS.ja.md) D3 に結果） |
 | **フェーズ 1（出力の芯）** | **完了。** `Common.h` / `Dither.h` / `MonoPanel.h` + `tests/bitformat/` / `tests/dither/` |
 | **フェーズ 2（レシート）** | **完了。** `Element.h` / `PageBase.h` / `Receipt.h` + `tests/receipt_layout/` / `tests/row/` |
@@ -22,8 +22,7 @@
 | **フェーズ 3（ラベル）** | **完了。** `Label.h` + `tests/label_layout/` |
 | **フェーズ 4（バーコード連携）** | **完了。** `PaperCanvas/Barcode.h` / `PaperCanvasBarcode.h` + `tests/barcode/`（zxing-cpp で往復デコード） |
 | **テスト一式** | **完了。13 本すべて通る** |
-
-| `docs/` のブラウザツール | 未着手 |
+| `docs/` のブラウザツール | **未着手。着手できる状態** |
 | examples | **完了。5 本、すべてビルド確認済み** |
 | 利用者向けドキュメント（README / GUIDE / API） | **完了。日英そろい** |
 
@@ -54,9 +53,9 @@
 
 7. `Element.h` / `PageBase.h` — 要素レコードと共通エンジン
 8. `Receipt.h` — `addText` / `addSpace` / `addLine` / `addRule` / `addImage`、`height()` の逐次確定
-9. `tests/split_invariance/`、`tests/build_stream/`、`tests/receipt_layout/`、`tests/determinism/`
+9. `tests/receipt_layout/` — 分割数不変性・`build()` と `stream()` の一致・決定性もここに含める
 
-**`split_invariance/` はこの段階で必ず通す。** ここを後回しにすると、分割起因の不具合がレイアウト実装の中に埋もれる。
+**分割数不変性はこの段階で必ず通す。** 後回しにすると、分割起因の不具合がレイアウト実装の中に埋もれる。独立ディレクトリにしなかった理由は [TEST_PLAN.ja.md](TEST_PLAN.ja.md) §3。
 
 10. `addRow`（グリッド）と `tests/row/`
 11. 折り返しと `tests/text/`
@@ -71,23 +70,23 @@
 
 ### フェーズ 4 — 連携
 
-15. `PaperCanvasBarcode.h` と `tests/barcode/` / `tests/barcode_decode/`
+15. `PaperCanvas/Barcode.h` / `PaperCanvasBarcode.h` と `tests/barcode/`（zxing-cpp のデコードも同テスト内）
 16. `tests/warnings/` / `tests/failure/`
 17. `tests/build_lovyangfx/` / `tests/build_m5unified/`
 
 ### フェーズ 5 — ブラウザツール（[WEB_TOOL.ja.md](WEB_TOOL.ja.md)）
 
-**フォント部品ライブラリ（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md)）の完成を待つ。** 途中リリースはしない方針を維持する（同 §8）。ライブラリは PaperCanvas に依存しないので並行して進む。
+**依存していたフォント部品ライブラリは完成した** — [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md)）。**v1.0 までの経路で最も長い依存が解消したので、このフェーズは着手できる。**
 
-18. **フォント描画ライブラリを別リポジトリで作る**（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md)）。**ここが v1.0 の一番長い依存**
-19. そのライブラリを `docs/` から使えるようにする
+18. ~~フォント描画ライブラリを別リポジトリで作る~~ **完了**（[lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)）
+19. lgfx-font-tool を `docs/` から使えるようにする（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 の 4 点を決める）
 20. `docs/index.html` — キャンバス設定、矩形の追加・ドラッグ・リサイズ、各種設定 UI
 21. モノクロプレビュー
 22. [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) の JSON 入出力と C++ コード生成
 23. `tests/js_parity/` — **同じ JSON を C++ と JS に食わせて 1bpp 出力を比較する**（§3.6）
 24. GitHub Pages を有効化（main / `docs`）
 
-**18 は PaperCanvas の実装に一切依存しない**（LovyanGFX だけを見る）ので、いつでも並行して始められる。むしろ v1.0 までの経路で最も長いので、早く始めるほどよい。
+字形と送り幅は lgfx-font-tool が出すので、ツールが実装するのは**レイアウトだけ**になる。23 のクロス検証もその範囲を見ることになる。
 
 ### フェーズ 6 — 仕上げとリリース
 
@@ -130,6 +129,6 @@
 | `addRow` の 4 列以上（セル配列 API） | v1.1。用途が出てから |
 | 列分割（縦帯）の露出 | v1.1 以降。用途が出てから |
 | レイアウト JSON のパーサ | v1.1。依存ライブラリの選定から |
-| **フォント描画ライブラリ（別リポジトリ）の仕様と着手** | **今すぐ着手できる。[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §7** |
+| lgfx-font-tool の取り込み方（4 点） | フェーズ 5 の着手時。[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 |
 | ツールのレシート対応 | フェーズ 5。ラベル専用で出すか |
 | クロス検証テストに Node を入れるか | フェーズ 5。ビルドレス方針と衝突する唯一の箇所 |

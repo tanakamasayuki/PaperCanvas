@@ -10,7 +10,7 @@
 | 確定した仕様 | 日英 | [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) |
 | 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md)、[CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、[DECISIONS.ja.md](DECISIONS.ja.md)、[TEST_PLAN.ja.md](TEST_PLAN.ja.md)、[DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)、[MANUAL_TEST.ja.md](MANUAL_TEST.ja.md) |
 
-> **C++ ライブラリは完成し、テスト 13 本が通っています。** 残るのはブラウザツールで、これは別リポジトリのフォント部品ライブラリ待ちです。現在地は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)。
+> **C++ ライブラリは完成し、テスト 13 本が通っています。** 残るのはブラウザツールで、待ちだったフォント部品ライブラリは [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool) として完成したため着手できます。現在地は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md)。
 
 ## まずここから
 
@@ -45,7 +45,7 @@
 
 - [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) — ブラウザツールと共有する JSON 形式。v1.0 では形式定義のみ（パーサは v1.1）。
 - [WEB_TOOL.ja.md](WEB_TOOL.ja.md) — ブラウザツール。置き場所と公開方法、プレビュー忠実性。
-- [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) — **別リポジトリで作るフォント部品ライブラリへの要求仕様。** 全形式のデコーダ／エンコーダを揃えた部品。PaperCanvas の実装対象ではないが、ブラウザツールがこれに依存する。
+- [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) — ブラウザツールが依存する [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)（完成・公開済み）。要求と実物の対応、取り込み時に決めること。
 
 **プロセス**
 
@@ -59,7 +59,7 @@
 
 | 論点 | 場所 |
 | --- | --- |
-| **フォント部品ライブラリの着手** | [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §7。別リポジトリ |
+| lgfx-font-tool の取り込み方（4 点） | [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 |
 | **v1.0 の範囲**（ライブラリ完成を待つか、ツールを v1.1 へ回すか） | [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §8 |
 | `addRow` の API 細部 | [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) §4.2.1 末尾。実装済みでレビュー待ち |
 

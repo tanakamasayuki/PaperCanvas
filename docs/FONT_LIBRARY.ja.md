@@ -1,207 +1,102 @@
-# フォント部品ライブラリ（別リポジトリ）— 要求仕様
+# フォント部品ライブラリ — 完成した
 
-**この文書は PaperCanvas の実装対象ではない。** 別リポジトリで作るライブラリへの要求をまとめたもので、固まったらそちらへ移す。PaperCanvas 側は [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3 でこれに依存する。
+**[lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool) として公開された。** この文書はその要求仕様だったもので、実物との対応と、PaperCanvas 側で決まったことを記録する。
 
-## 1. 位置づけ
-
-**特定の用途に紐づけず、部品として完成させる。** ビットマップフォント形式のデコーダとエンコーダを一通り揃え、共通の中立モデルを介して相互変換・描画・生成ができるようにする。そのうえで、用途ごとの使い方をサンプル実装として示す。
-
-きっかけは複数プロジェクトが同じ問題を抱えていることだった。
-
-| プロジェクト | 抱えている問題 |
+| | |
 | --- | --- |
-| [LGFXScreenBuilder](https://github.com/tanakamasayuki/LGFXScreenBuilder) | 画面プレビューの文字位置が厳密でない。`docs/fontgen.html` で u8g2 を生成しているが、生成側と描画側が別実装 |
-| PaperCanvas | 紙面プレビューが 1bpp で完全一致すべきだが、描画が C++ と JS で二重実装になる |
-| 今後のツール | 同じ |
+| npm | [`lgfx-font-tool`](https://www.npmjs.com/package/lgfx-font-tool) v0.1.0、MIT、**依存ゼロ** |
+| リポジトリ | https://github.com/tanakamasayuki/LGFXFontToolJs |
+| Web アプリ | https://tanakamasayuki.github.io/LGFXFontToolJs/ （Viewer / Generator / Converter / Inspector） |
 
-ただし**ライブラリ側はこれらを前提にしない。** 用途に寄せると他で使えなくなる。
+## 1. 要求と実物の対応
 
-## 2. 中核 — ハブ型にする
+要求はすべて満たされている。**超えている点のほうが多い。**
 
-```text
-      TTF / WebFont ─┐                      ┌─→ u8g2
-      u8g2 ──────────┤                      ├─→ GFXfont
-      GFXfont ───────┤                      ├─→ BDF
-      BDF ───────────┼─→  中立モデル  ─────┼─→ VLW
-      RLE / BMP / ───┤   （Font/Glyph）     ├─→ C/C++ ソース
-      GLCD / Fixed   │                      │
-      VLW ───────────┘                      └─→ 描画（1bpp / 8bpp）
+| 要求（旧 §5.1） | 実物 |
+| --- | --- |
+| 各形式のデコーダ | `decodeU8g2` / `decodeGfx` / `decodeBdf` / `decodeVlw` / `decodeBff` / `decodeFontx2` / `decodeGlcd` / `decodeFixedBmp` / `decodeBmpFont` / `decodeRleFont` / `decodeCSource`、および**形式自動判別**の `decode` / `detect` |
+| 各形式のエンコーダ | `encodeU8g2` / `encodeGfx` / `encodeBdf` / `encodeVlw` / `encodeBff` / `encodeFontx2` / `encodeCSource`、汎用 `encode` |
+| 「入らない」を報告する | `canEncode` / `canEncodeU8g2` ほか。`encode` は収まらなければ `EncodeConstraintError` で**投げる**（切り詰めない） |
+| サブセット | `subset` / `merge` |
+| 描画 | `drawString` / `drawChar` |
+| テキスト計測 | `textWidth` / `fontHeight` / `measureText` |
+| datum | `DATUM` / `resolveDatum` |
+| 検査 | `inspect` / `coverage` / `codepointRanges` / `estimateSize` / `estimateSizes` |
+| TTF からの生成 | `loadTtf` / `rasterizeSet` / `measureTtf` / `generateFont` |
+| 中立モデル | `createFont` / `getGlyph` / `createBitmap` / `serializeFont` / `deserializeFont` |
+
+**要求に無かったもの**
+
+- **FONTX2** の読み書き（Shift_JIS 対応つき）
+- **C ソースの入出力** — GitHub で拾った `.h` をそのまま食える。`encodeCSource` は Arduino に貼れる形で出す
+- **文字集合ユーティリティ** — `resolveCharset` / `TEMPLATES` / `splitBmp` ほか
+- **内蔵 186 フォントのカタログ同梱** — `fontCatalog` / `loadFont`。抽出スクリプトを自分で書く必要が無くなった
+- **4 つの Web アプリ**（Viewer / Generator / Converter / Inspector）
+
+## 2. 正しさの担保 — 要求よりも強い
+
+旧 §6 で 3 種類の検証を求めていた。実物はそれを**実測でやっている**。
+
+- **LovyanGFX との一致**: `lang-ship:host` コアでネイティブビルドした**本物の LovyanGFX** に対して、**186 フォント全部・1,860 ケース**でバイト単位一致
+- **エンコーダの実効性**: このライブラリが**書いた**フォントを本物の LovyanGFX に読ませて描かせるケースが 36 件
+- フィクスチャがコミットされているので、`npm test` にネイティブビルドが要らない
+
+旧 §6.3 で「往復だけでは仕様の解釈ズレが実機で化ける」と書いた懸念は、36 件の実物ロードで潰されている。
+
+## 3. PaperCanvas から見て決まったこと
+
+### 3.1 CJK フォントは自動取得される
+
+npm パッケージには軽い 70 本（約 320KB）だけが入り、**CJK の大きいもの（合計 42MB）は初回 `loadFont` で GitHub Pages から取得される**。
+
+PaperCanvas のブラウザツールは**日本語が主用途**なので、ここは必ず通る経路になる。
+
+- 既定のまま使えば取得は自動。**オフラインでは動かない**
+- 自前でホストするなら `configureFontData({ baseUrl: ... })`
+
+**決めるべきこと**: PaperCanvas の Pages（`docs/`）に置くフォントを絞って同梱するか、既定の自動取得に任せるか。ラベル用途なら常用漢字のサブセットで足りる可能性が高い。
+
+### 3.2 PaperCanvas 側に残る二重実装は「レイアウト」だけ
+
+字形と送り幅はライブラリが出す。ツールが持つのは列幅の解決・折り返し位置・矩形配置だけになる。
+
+これは [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §3.6 のクロス検証（同じ JSON を C++ と JS に食わせて 1bpp を比較）で押さえる。**そのテストの守備範囲が狭まった**ぶん、確実性が上がっている。
+
+### 3.3 v1.0 の見通し
+
+[FONT_LIBRARY 旧 §8](#) で「このライブラリが v1.0 までの経路で最も長い依存」としていたが、**それが解消した。** 残るのは PaperCanvas のブラウザツール本体（[DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) フェーズ 5）と実機確認だけ。
+
+## 4. 使い方の起点
+
+```js
+import { loadFont, createBitmap, drawString, textWidth, fontHeight }
+  from 'lgfx-font-tool';
+
+const font = await loadFont('lgfxJapanGothic_16');
+const bmp  = createBitmap(textWidth(font, 'ご来店ありがとうございます'), fontHeight(font), 1);
+drawString(bmp, font, 'ご来店ありがとうございます', 0, 0);
+// bmp.data は 1bpp。PaperCanvas の Bitmap と同じ考え方
 ```
 
-- **デコーダ**が各形式 → 中立モデル
-- **エンコーダ**が中立モデル → 各形式
-- **描画**は中立モデルからビットマップへ
+**ビット並びは PaperCanvas と完全に一致する。確認済み。**
 
-この形にすると変換は組み合わせで出てくる。GFXfont → u8g2 も TTF → BDF も個別に書く必要がない。**N 形式に対して N×N の変換ではなく、2N 個の部品で済む。**
-
-### 2.1 中立モデル
-
-```text
-Font
-  familyName, styleName
-  ascent, descent, lineHeight        全体メトリクス（int16）
-  glyphs: Map<codepoint, Glyph>
-
-Glyph
-  codepoint
-  width, height                      ビットマップの大きさ（int16）
-  xOffset, yOffset                   ベースラインからのベアリング（int16）
-  xAdvance                           送り幅（int16）
-  bitmap                             1bpp または 8bpp
+```js
+// lgfx-font-tool src/model/bitmap.js
+const stride = bpp === 1 ? (width + 7) >> 3 : width;
+return (bmp.data[y * bmp.stride + (x >> 3)] >> (7 - (x & 7))) & 1;   // getPixel
+const mask = 0x80 >> (x & 7);                                        // setPixel
 ```
 
-- **メトリクスは `int16`。** LovyanGFX の `FontMetrics` に合わせる。u8g2 の 7bit 制限のような**形式固有の制約をモデルに持ち込まない**
-- **1bpp と 8bpp の両方**を表現できること。VLW / BFF はアンチエイリアス付きで、そこを落とすと VLW のエンコーダが作れない
-- コードポイントは BMP（U+0000〜FFFF）を最低限とする。LovyanGFX の描画 API が `uint16_t` なのでデバイス側ではそれ以上使えないが、**モデル側で制限する理由はない**（BDF や TTF は超えられる）
+`stride = (width + 7) >> 3`、MSB first、行はバイト境界パディング。PaperCanvas の `Bitmap`（`rowBytes = (width + 7) / 8`、bit7 が左端）と同一なので、**`bmp.data` をそのままページへ合成できる。** 変換もコピーも要らない。
 
-## 3. 対応形式
+詳細は本家のドキュメント（Beginner / Use-case / Advanced / Specification、いずれも日英）。
 
-LovyanGFX 1.2.26 の `lgfx_fonts.hpp` にある形式と、その外の相互運用形式。
+## 5. 残る確認事項
 
-| 形式 | LGFX クラス | 深度 | 内蔵本数 | デコーダ | エンコーダ | 備考 |
-| --- | --- | --- | --- | --- | --- | --- |
-| **u8g2** | `U8g2font` | 1 | 116 | 必須 | 必須 | CJK は全部これ。fontgen の出力形式 |
-| **GFXfont** | `GFXfont` | 1 | 61 | 必須 | 必須 | Adafruit GFX 互換。世に大量にある |
-| **BDF** | `BDFfont` | 1 | 0 | 必須 | 必須 | **相互運用の要**。fontforge / otf2bdf / u8g2 純正ツールと繋がる |
-| GLCDfont | `GLCDfont` | 1 | 2 | 必須 | 任意 | Font0 / Font8x8C64。素のビットマップ表 |
-| FixedBMPfont | `FixedBMPfont` | 1 | 2 | 必須 | 任意 | AsciiFont8x16 / 24x48 |
-| BMPfont | `BMPfont` | 1 | 1 | 必須 | 任意 | Font2 |
-| RLEfont | `RLEfont` | 1 | 4 | 必須 | 任意 | Font4 / 6 / 7 / 8 |
-| VLW | `VLWfont` | 8 | 0 | 必須 | 必須 | 実行時ロード。アンチエイリアス |
-| BFF | `BFFfont` | 1–8 | 0 | 検討 | 検討 | 新しく未文書。カーニングあり |
-| **TTF / OTF / WOFF** | — | — | — | **入力のみ** | — | §4 |
-
-内蔵フォントは `lgfx_fonts.cpp` の `constexpr uint8_t[]` なので、**ソースからバイト配列を抽出するスクリプト**が要る（`fetch()` できない）。形式に依らず必要な作業。
-
-### 3.1 エンコーダは「入らない」を必ず報告する
-
-形式ごとに表現できる範囲が違い、**超えたときに黙って切り詰めると読めないフォントが出来上がる。**
-
-| 形式 | 主な制約 |
-| --- | --- |
-| u8g2 | 送り幅・ベアリングが **−64〜63**（7bit）。グリフ幅・高さ 127 以下。1 グリフ 255 バイト以下 |
-| GFXfont | 送り幅 0〜255、ベアリング −128〜127。範囲の線形走査なので CJK では範囲数が膨らむ |
-| GLCD / FixedBMP | 固定サイズのみ |
-| VLW | 8bpp 固定。RAM に索引を持つ |
-
-u8g2 の 7bit 制限が実用上の文字高さを書体により 45〜64px 程度に決めており、**75px の DejaVu72 と Font8 は u8g2 に変換できない**（LGFXScreenBuilder の `"@" needs dx = 67px` エラーがこれ）。詳細は同プロジェクトの [FONT_FORMATS.ja.md](https://github.com/tanakamasayuki/LGFXScreenBuilder/blob/main/docs/FONT_FORMATS.ja.md) にある。
-
-したがって API はこうする。
-
-- `canEncode(font, format)` — 事前に判定し、**どのグリフがなぜ入らないか**を返す
-- エンコード時に入らないものがあれば**エラーにする**。切り詰めない
-- 呼び出し側が「そのグリフを落とす」「サイズを下げる」を選べるようにする
-
-**これは利用者に見せるべき情報である。** LGFXScreenBuilder が `Try a character height of 45px or less` と出しているのは正しく、その判断材料をライブラリが持つべきという話。
-
-## 4. TTF からの生成 — ラスタライズは誰が正解か
-
-**ここで前提が入れ替わるので明示しておく。**
-
-| 状況 | 正解を持つのは |
-| --- | --- |
-| **既存のビットマップフォントを描く**（プレビュー） | **LovyanGFX**。ブラウザのラスタライザで代用すると字形が合わない |
-| **TTF から新しくフォントを作る**（生成） | **ラスタライザ自身**。出力したビットがそのままフォントデータになり、デバイスはそれを描く |
-
-生成側ではブラウザの Canvas でラスタライズしてよい。むしろ、そうして出来たビットマップが**定義上の正解**になる。この 2 つを混同しないこと。
-
-生成に必要なもの:
-
-- TTF / OTF / WOFF の読み込みとグリフのラスタライズ
-- 閾値（アンチエイリアスを 1bpp に落とす規則）。**決定的であること**
-- 文字集合の指定（ASCII / かな / 常用漢字 / 任意）
-- ヒンティングやサブピクセルの扱いを固定し、同じ入力から同じフォントが出ること
-
-## 5. 機能要求
-
-### 5.1 必須
-
-1. **デコーダ** — §3 の各形式 → 中立モデル
-2. **エンコーダ** — 中立モデル → §3 の各形式。制約違反はエラー（§3.1）
-3. **能力問い合わせ** — `canEncode()` が形式ごとの可否と理由を返す
-4. **サブセット** — 中立モデルから文字集合を絞る
-5. **描画** — 中立モデルと文字列から 1bpp / 8bpp ビットマップ。**`LGFXBase` と同じ規則**で送り幅を積む
-6. **テキスト計測** — `textWidth()` / `fontHeight()` 相当
-7. **文字倍率と datum** — `setTextSize()` / `setTextDatum()` 相当
-8. **検査** — カバレッジ、メトリクス、形式ごとの推定サイズ（LGFXScreenBuilder のフォントカタログ相当）
-
-### 5.2 サンプル実装（ユースケース）
-
-ライブラリ本体は用途を持たない。使い方はサンプルで示す。
-
-| サンプル | 内容 |
-| --- | --- |
-| **TTF → u8g2** | fontgen 相当。ブラウザで完結する |
-| **フォント描画** | 文字列 → 1bpp。PaperCanvas / LGFXScreenBuilder が使う経路 |
-| **形式変換** | GFXfont → u8g2、BDF → GFXfont など。入らない場合の報告つき |
-| **サブセット** | 常用漢字だけの u8g2 を作る |
-| **C/C++ ソース出力** | `constexpr uint8_t[]` としてスケッチに貼れる形 |
-| **フォント検査** | 収録文字・メトリクス・各形式でのサイズ見積り |
-
-### 5.3 やらないこと
-
-- 描画先の抽象化（Canvas への貼り付けは利用側）
-- レイアウト（折り返し、列、矩形配置）— 利用側の仕事
-- サーバ通信、フォントの自動取得
-- 組版（カーニング適用、合字、複雑テキストレイアウト）。BFF のカーニング情報は**保持するが適用はしない**
-
-## 6. 正しさの担保
-
-3 種類あり、どれも欠かせない。
-
-### 6.1 LovyanGFX との一致（描画の正解）
-
-**LovyanGFX 自身をオラクルにする。**
-
-```text
-同じフォント・文字列・サイズ
-  → C++（lang-ship:host コアの LovyanGFX）で描画 → 1bpp   ← 正解
-  → JS（このライブラリ）で描画                   → 1bpp
-  → バイト列が完全一致すること
-```
-
-- ホスト側は `IFont` の共通インタフェース（`updateFontMetric` / `drawChar`）で全形式を同じコードから回せる
-- 対象は「全フォント × 代表的な文字集合 × 代表的なサイズ」
-- 1bpp なのでアンチエイリアスの誤差がなく、**完全一致で判定できる**。「だいたい合う」で妥協する理由がない
-- **これがデコーダ実装のデバッグ環境も兼ねる。** 形式仕様の読み間違いという失敗モードは、ここで全部落ちる
-
-### 6.2 往復（エンコーダの自己整合）
-
-```text
-中立モデル → エンコード → デコード → 中立モデル
-  → グリフ・メトリクスが完全一致すること
-```
-
-形式の制約に収まる範囲で情報が落ちないこと。
-
-### 6.3 実物との一致（エンコーダの実効性）
-
-エンコードした u8g2 / GFXfont を**実際に LovyanGFX に読ませて描かせ**、元の中立モデルからこのライブラリが描いたものと一致すること。
-
-§6.2 だけでは「自分が書いた仕様どおりに読み書きできる」ことしか言えない。仕様の解釈が上流とずれていた場合、往復は通るのに実機で化ける。
-
-## 7. 決めるべきこと
+`bmp.data` のビット並びは §4 のとおり**一致を確認済み**。残りは 3 点。
 
 | 論点 | 内容 |
 | --- | --- |
-| リポジトリ名 | 兄弟プロジェクトの流儀に合わせる |
-| 中立モデルの具体形 | §2.1 の詳細。シリアライズ形式を持つかどうか |
-| 実装順序 | u8g2 → GFXfont → BDF → LGFX 内部形式 → VLW が自然か |
-| BFF を含めるか | 未文書で仕様が安定していない |
-| TTF ラスタライザ | ブラウザ Canvas か WASM か。決定性をどう担保するか |
-| 内蔵フォントの抽出と配布 | 成果物をコミットするか各自生成か。ライセンス表示（efont / Noto / Adafruit GFX で条件が違う） |
-| 検証ハーネスの回し方 | pytest-embedded を借りるか、Node から直接叩くか |
-| Node / ブラウザ両対応 | どちらを主にするか |
-
-## 8. PaperCanvas 側への影響
-
-**このライブラリの完成を待って 1.0.0 を出す。** 当初の方針（途中リリースをしない）どおり。部品として完成させる方針にしたことで、これが v1.0 までの経路で最も長い依存になった。
-
-検討して採らなかった案:
-
-- *ライブラリの「デコーダ＋描画」だけ先に完成させて v1.0* — PaperCanvas が使うのはその 2 つだけなので早く出せるが、部品を用途に合わせて切り出すことになり、「用途に紐づけない部品」という §1 の方針と食い違う
-- *C++ ライブラリだけで 1.0.0、ツールを v1.1* — 途中リリースをしない方針の変更になる
-
-このライブラリは PaperCanvas の実装に一切依存しない（LovyanGFX しか見ない）ので、**並行して進められる**。C++ ライブラリ本体もこの話に影響されない。すでに完成しており、テスト 13 本が通っている。
-
-**したがって PaperCanvas 側では、このライブラリを待たずに進められるもの（examples、利用者向けドキュメント、実機確認）を先に片付ける。**
+| CJK フォントの配布 | 自動取得に任せるか、`docs/` にサブセットを置くか（§3.1） |
+| `setTextSize` 相当 | PaperCanvas は文字倍率を持つ。ライブラリ側の倍率規則と一致するか |
+| ビルドレス方針との整合 | [WEB_TOOL.ja.md](WEB_TOOL.ja.md) §1 は npm を使わない前提。ESM を CDN から読むか、`docs/` に置くか |

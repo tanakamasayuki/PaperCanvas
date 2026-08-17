@@ -65,6 +65,19 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Setup Node
+        # Only tests/js_parity needs it: that test renders the same cases with
+        # lgfx-font-tool and requires them to match PaperCanvas byte for byte.
+        # Without Node the test skips rather than fails, which would let the
+        # browser tool drift away from the library unnoticed — so CI installs it.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install lgfx-font-tool
+        working-directory: PaperCanvas/tests/js_parity
+        run: npm install
+
       - name: Install test dependencies
         working-directory: PaperCanvas/tests
         run: uv sync

@@ -1,0 +1,9 @@
+{
+  "name": "papercanvas-js-parity",
+  "private": true,
+  "type": "module",
+  "description": "Renders the parity cases with lgfx-font-tool so they can be compared against the C++ output. See test_js_parity.py.",
+  "dependencies": {
+    "lgfx-font-tool": "^0.1.0"
+  }
+}

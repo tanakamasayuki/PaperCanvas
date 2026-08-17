@@ -22,7 +22,8 @@
 | **フェーズ 3（ラベル）** | **完了。** `Label.h` + `tests/label_layout/` |
 | **フェーズ 4（バーコード連携）** | **完了。** `PaperCanvas/Barcode.h` / `PaperCanvasBarcode.h` + `tests/barcode/`（zxing-cpp で往復デコード） |
 | **テスト一式** | **完了。13 本すべて通る** |
-| `docs/` のブラウザツール | **未着手。着手できる状態** |
+| **`tests/js_parity/`** | **完了。C++ と JS の一致を 10 ケースでバイト検証** |
+| `docs/` のブラウザツール（UI） | 未着手。**土台の検証は済んでいる** |
 | examples | **完了。5 本、すべてビルド確認済み** |
 | 利用者向けドキュメント（README / GUIDE / API） | **完了。日英そろい** |
 
@@ -79,11 +80,11 @@
 **依存していたフォント部品ライブラリは完成した** — [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md)）。**v1.0 までの経路で最も長い依存が解消したので、このフェーズは着手できる。**
 
 18. ~~フォント描画ライブラリを別リポジトリで作る~~ **完了**（[lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)）
-19. lgfx-font-tool を `docs/` から使えるようにする。**まず [FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 の 4 点を実物で確認する**（決め打ちしない）
+19. ~~§5 の 4 点を実物で確認~~ **完了**（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 に結果）。残るのは `docs/` からの ESM の読み方だけ
 20. `docs/index.html` — キャンバス設定、矩形の追加・ドラッグ・リサイズ、各種設定 UI
 21. モノクロプレビュー
 22. [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) の JSON 入出力と C++ コード生成
-23. `tests/js_parity/` — **同じ JSON を C++ と JS に食わせて 1bpp 出力を比較する**（§3.6）
+23. ~~`tests/js_parity/`~~ **完了。UI より先に作った** — 同じテキストを C++ と JS で描いてバイト比較。10 ケース（BMPfont / RLEfont / u8g2 / GFXfont の 4 系統、倍率 1.0 / 1.5 / 2.0、日本語込み）で一致
 24. GitHub Pages を有効化（main / `docs`）
 
 字形と送り幅は lgfx-font-tool が出すので、ツールが実装するのは**レイアウトだけ**になる。23 のクロス検証もその範囲を見ることになる。

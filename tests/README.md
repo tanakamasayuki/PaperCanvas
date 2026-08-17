@@ -37,7 +37,27 @@ The first run downloads the core and libraries into the arduino-cli environment,
 - `dither/` — threshold and Bayer. **A 0..255 gray ramp rendered at five memory limits must produce identical bytes**, which is the proof that ordered dithering does not depend on tile boundaries. Also the threshold boundary (`gray < threshold` is black), that Bayer is not a flat threshold, and that Bayer 4x4 repeats every 4 rows.
 - `receipt_layout/` — stacking. **`height()` must equal the margins plus every `add()`'s reported height** (two separate paths reaching the same number; drift means a silently clipped or padded page), short-buffer refusal, split invariance, `build()` == `stream()`, determinism, `clear()`, and that a setting change affects only later elements.
 
-The remaining tests are not written yet; the plan is in [../docs/TEST_PLAN.ja.md](../docs/TEST_PLAN.ja.md) §3.
+**Tier 2 — integration**
+
+- `barcode/` — barcode placement: whole-number scale, a blank quiet zone, extended guard bars, and nothing drawn when it will not fit. **The same test decodes the generated page with zxing-cpp and requires the input back.**
+- `js_parity/` — **does the browser tool's preview match what the device prints?** The same text is rendered by PaperCanvas (C++) and by [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool) (JS), and the 1bpp pages must be byte-identical. **The only test that needs Node.**
+- `build_lovyangfx/` / `build_m5unified/` — include order and library combinations
+
+## Only js_parity needs Node
+
+```sh
+cd js_parity && npm install
+```
+
+Without it the test **skips rather than fails**, so the rest of the suite still runs on a machine without Node — but **CI always installs it**, because a permanently skipped test would let the tool drift away from the library unnoticed.
+
+`cases.json` is the single source; the C++ side reads it through the generated `cases.h`. After editing it:
+
+```sh
+python3 js_parity/gen_cases.py
+```
+
+Forgetting is caught: the test checks the header is current.
 
 ## Looking at the output
 

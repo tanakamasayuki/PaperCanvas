@@ -37,7 +37,27 @@ uv run pytest monopanel -v
 - `dither/` — 閾値と Bayer。**0..255 の階調ランプをメモリ上限 5 通りで生成してバイト一致すること**（順序ディザがタイル境界に依存しないことの証明）、閾値の境界（`gray < threshold` が黒）、Bayer が平坦な閾値でないこと、4 行周期であること
 - `receipt_layout/` — 縦積み。**`height()` が「余白 + 各 add() の戻り値の総和」と一致すること**（この 2 つは別経路で同じ数に到達するので、ずれるとページが黙って切れるか余る）、バッファ不足の拒否、分割数不変性、`build()` と `stream()` の一致、決定性、`clear()`、設定が以後の要素にのみ効くこと
 
-残りのテストは未実装。計画は [../docs/TEST_PLAN.ja.md](../docs/TEST_PLAN.ja.md) §3。
+**Tier 2 — 連携**
+
+- `barcode/` — バーコード配置。倍率が整数倍であること、クワイエットゾーンが空いていること、ガードバーが伸びていること、収まらないなら描かないこと。**同じテストが生成ページを zxing-cpp でデコードして入力に戻ることまで確認する**
+- `js_parity/` — **ブラウザツールのプレビューが実際の印字と一致するか。** 同じテキストを PaperCanvas（C++）と [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)（JS）で描き、1bpp ページがバイト単位で一致すること。**Node が必要な唯一のテスト**
+- `build_lovyangfx/` / `build_m5unified/` — include 順とライブラリ組み合わせ
+
+## js_parity だけ Node が要る
+
+```sh
+cd js_parity && npm install
+```
+
+入っていなければテストは **fail ではなく skip** する。Node の無い環境でも残りを走らせられるようにするためだが、**CI では必ず入れる**（skip したままだとツールがライブラリから離れていっても気づけない）。
+
+ケースは `cases.json` が単一の出所で、C++ 側は生成された `cases.h` 経由で読む。`cases.json` を編集したら:
+
+```sh
+python3 js_parity/gen_cases.py
+```
+
+忘れてもテストが鮮度を見て落とす。
 
 ## 出力物を見る
 

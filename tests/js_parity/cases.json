@@ -1,0 +1,17 @@
+{
+  "_comment": "Shared input for both sides. The C++ sketch and the Node script read this same file, so neither can quietly drift onto different content. Fonts are chosen to cover four format families: BMPfont, RLEfont, u8g2 and GFXfont.",
+  "canvasWidth": 320,
+  "canvasHeight": 64,
+  "cases": [
+    { "name": "font2_ascii",      "font": "Font2",              "text": "Total 1580",      "size": 1.0 },
+    { "name": "font2_size2",      "font": "Font2",              "text": "Total",           "size": 2.0 },
+    { "name": "font2_size15",     "font": "Font2",              "text": "Total",           "size": 1.5 },
+    { "name": "font4_ascii",      "font": "Font4",              "text": "ABC 123",         "size": 1.0 },
+    { "name": "gfx_ascii",        "font": "FreeSans12pt7b",     "text": "Receipt",         "size": 1.0 },
+    { "name": "efont_ja",         "font": "efontJA_16",         "text": "ご来店ありがとう",  "size": 1.0 },
+    { "name": "efont_mixed",      "font": "efontJA_16",         "text": "コーヒー 480",     "size": 1.0 },
+    { "name": "gothic_ja",        "font": "lgfxJapanGothic_16", "text": "産地直送トマト",    "size": 1.0 },
+    { "name": "gothic_size2",     "font": "lgfxJapanGothic_16", "text": "合計",            "size": 2.0 },
+    { "name": "efont_punct",      "font": "efontJA_16",         "text": "￥1,580-（税込）",  "size": 1.0 }
+  ]
+}

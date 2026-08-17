@@ -158,6 +158,56 @@ void setup() {
                 "gray8 and 1bpp sources of the same picture print identically");
   }
 
+  //------------------------------------------- 1bpp passthrough (print as-is)
+  // The browser tool dithers images itself and embeds the result, so the device
+  // must print those bits unchanged. At Fit::None the sampling step is exactly
+  // 1:1 and Mono::Threshold maps the 0/255 a 1bpp source produces straight back
+  // to black/white — but that is a chain of three things, and if any link
+  // changed the tool's preview would stop matching the paper.
+  {
+    static uint8_t pattern[PaperCanvas::rowBytes(SRC_W) * SRC_H];
+    // A pattern with no symmetry, so a flip or an off-by-one shows up.
+    for (uint16_t y = 0; y < SRC_H; ++y) {
+      for (uint16_t x = 0; x < SRC_W; ++x) {
+        const bool on = ((x * 7 + y * 13) % 5) < 2;
+        if (on) {
+          pattern[(size_t)y * PaperCanvas::rowBytes(SRC_W) + (x >> 3)] |=
+              (uint8_t)(0x80u >> (x & 7));
+        }
+      }
+    }
+
+    PaperCanvas::Bitmap src;
+    src.data = pattern;
+    src.width = SRC_W;
+    src.height = SRC_H;
+    src.rowBytes = PaperCanvas::rowBytes(SRC_W);
+
+    Label lb(W, H);
+    ImageOptions io;
+    io.fit = Fit::None;
+    io.align = PaperCanvas::Align::Left;
+    io.valign = PaperCanvas::VAlign::Top;
+    lb.addImage(Rect{0, 0, SRC_W, SRC_H}, src, io);
+    lb.build(g_page, sizeof(g_page));
+
+    uint32_t wrong = 0;
+    for (uint16_t y = 0; y < SRC_H; ++y) {
+      for (uint16_t x = 0; x < SRC_W; ++x) {
+        const bool want =
+            (pattern[(size_t)y * PaperCanvas::rowBytes(SRC_W) + (x >> 3)] >> (7 - (x & 7))) & 1;
+        const bool got = (g_page[(size_t)y * ROW_BYTES + (x >> 3)] >> (7 - (x & 7))) & 1;
+        if (want != got) { ++wrong; }
+      }
+    }
+    Serial.printf("#PASSTHRU wrong=%lu of %u warn=0x%04x\n", (unsigned long)wrong,
+                  (unsigned)(SRC_W * SRC_H), lb.warnings());
+    reportCheck("mono1bpp_passthrough", wrong == 0,
+                "a 1bpp source at natural size prints bit for bit");
+    reportCheck("mono1bpp_passthrough_quiet", lb.warnings() == 0,
+                "printing prepared bits as-is raises nothing");
+  }
+
   //--------------------------------------------------------------- inversion
   {
     Label lb(W, H);

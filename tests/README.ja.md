@@ -41,6 +41,7 @@ uv run pytest monopanel -v
 
 - `barcode/` — バーコード配置。倍率が整数倍であること、クワイエットゾーンが空いていること、ガードバーが伸びていること、収まらないなら描かないこと。**同じテストが生成ページを zxing-cpp でデコードして入力に戻ることまで確認する**
 - `js_parity/` — **ブラウザツールのプレビューが実際の印字と一致するか。** 同じテキストを PaperCanvas（C++）と [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)（JS）で描き、1bpp ページがバイト単位で一致すること。**Node が必要な唯一のテスト**
+- `gencheck/` — **ツールが出した C++ が本当にコンパイルして動くか。** 生成ヘッダを置いてビルドし、明細を減らすとページが縮むことまで確認する。`MyReceipt.h` / `MyLabel.h` は生成物
 - `build_lovyangfx/` / `build_m5unified/` — include 順とライブラリ組み合わせ
 
 ## js_parity だけ Node が要る

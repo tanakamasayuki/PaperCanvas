@@ -23,7 +23,8 @@
 | **フェーズ 4（バーコード連携）** | **完了。** `PaperCanvas/Barcode.h` / `PaperCanvasBarcode.h` + `tests/barcode/`（zxing-cpp で往復デコード） |
 | **テスト一式** | **完了。13 本すべて通る** |
 | **`tests/js_parity/`** | **完了。C++ と JS の一致を 10 ケースでバイト検証** |
-| `docs/` のブラウザツール（UI） | 未着手。**土台の検証は済んでいる** |
+| **`docs/` のブラウザツール** | **動作する。** 入口 / レシート / ラベルの 3 ページ、プレビュー、PNG、C++ 出力。JSON 入出力だけ未着手 |
+| **`tests/gencheck/`** | **完了。生成した C++ をコンパイルして動作確認** |
 | examples | **完了。5 本、すべてビルド確認済み** |
 | 利用者向けドキュメント（README / GUIDE / API） | **完了。日英そろい** |
 
@@ -81,11 +82,11 @@
 
 18. ~~フォント描画ライブラリを別リポジトリで作る~~ **完了**（[lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool)）
 19. ~~§5 の 4 点を実物で確認~~ **完了**（[FONT_LIBRARY.ja.md](FONT_LIBRARY.ja.md) §5 に結果）。残るのは `docs/` からの ESM の読み方だけ
-20. `docs/index.html` — キャンバス設定、矩形の追加・ドラッグ・リサイズ、各種設定 UI
-21. モノクロプレビュー
-22. [LAYOUT_FORMAT.ja.md](LAYOUT_FORMAT.ja.md) の JSON 入出力と C++ コード生成
+20. ~~`docs/index.html` ほか~~ **完了** — `index.html`（入口）/ `receipt.html` / `label.html`。ラベルは矩形のドラッグ・リサイズつき
+21. ~~モノクロプレビュー~~ **完了**。PNG 書き出しも
+22. **C++ コード生成 完了**（データ構造体＋ビルド関数、表の繰り返し、画像の 1bpp 埋め込み）。JSON 入出力は未着手
 23. ~~`tests/js_parity/`~~ **完了。UI より先に作った** — 同じテキストを C++ と JS で描いてバイト比較。10 ケース（BMPfont / RLEfont / u8g2 / GFXfont の 4 系統、倍率 1.0 / 1.5 / 2.0、日本語込み）で一致
-24. GitHub Pages を有効化（main / `docs`）
+24. GitHub Pages を有効化（main / `docs`）— **未実施**
 
 字形と送り幅は lgfx-font-tool が出すので、ツールが実装するのは**レイアウトだけ**になる。23 のクロス検証もその範囲を見ることになる。
 
@@ -96,7 +97,7 @@
 25. ~~examples~~ **完了**（HelloReceipt / HelloLabel / ReceiptWithBarcode / StreamBands / PrinterWidths）
 26. ~~利用者向けドキュメント~~ **完了**（README.ja/en、GUIDE.ja/en、API.ja/en、examples/README.ja/en）
 27. `MANUAL_TEST.ja.md` と実機確認 — **次にやれること**
-28. `tools/release_hooks/pre_release_commit.py` — ZIP からツール本体を除外
+28. ~~`tools/release_hooks/pre_release_commit.py`~~ **完了**。ZIP からツール本体を除外し、設計文書は残す
 29. BarcodeKit を `dir:` からバージョン指定へ切り替え
 30. **`CHANGELOG.md` の初回リリース項目を書く** — BarcodeKit の書式（`(EN)` / `(JA)` の対で、何をどういう理由でそうしたかを書く）。**リリース前は細かい作業ログを積まない。初回リリースの項目だけでよい**
 31. **`memo.ja.md` を削除**

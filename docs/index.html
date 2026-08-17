@@ -1,0 +1,75 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PaperCanvas layout tool</title>
+<link rel="stylesheet" href="css/app.css">
+
+<header class="top">
+  <h1>PaperCanvas</h1>
+  <nav>
+    <a href="receipt.html">Receipt</a>
+    <a href="label.html">Label</a>
+    <a href="https://github.com/tanakamasayuki/PaperCanvas">GitHub</a>
+  </nav>
+</header>
+
+<div class="layout" style="grid-template-columns: 1fr">
+  <div>
+    <div class="panel">
+      <h2>What this does</h2>
+      <p>
+        Lay out a receipt or a label, see exactly what the printer will produce,
+        and take away a C++ header you paste into your sketch. Fill in the data
+        struct, call the build function, print.
+      </p>
+      <p>
+        The preview is not an approximation. Glyphs come from
+        <a href="https://www.npmjs.com/package/lgfx-font-tool">lgfx-font-tool</a>,
+        which is verified against the real LovyanGFX, and the layout rules are
+        compared against PaperCanvas itself in the library's test suite.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>Start</h2>
+      <div class="row">
+        <a href="receipt.html"><button class="primary">Receipt</button></a>
+        <a href="label.html"><button>Label</button></a>
+      </div>
+      <p class="hint">
+        <b>Receipt</b> — fixed width, grows with its content, and has a table
+        whose rows repeat for however many items you pass at run time.<br>
+        <b>Label</b> — a fixed canvas with everything placed by rectangle.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>Before you start: the printable width</h2>
+      <p>
+        This one number matters more than anything else. Too small and you waste
+        paper; too large and the printer cuts the right edge — and nothing tells
+        you it happened.
+      </p>
+      <p>
+        It is normally in the printer's spec <b>in dots, not millimetres</b>,
+        because the printable area is narrower than the paper. Converting 58&nbsp;mm
+        at 203&nbsp;dpi gives 463 dots, but nearly every 58&nbsp;mm printer prints
+        <b>384</b>. Use the number the manufacturer publishes.
+      </p>
+      <table class="cols">
+        <tr><th>Paper</th><th>Typical printable width</th></tr>
+        <tr><td>58 mm</td><td>384 dots</td></tr>
+        <tr><td>80 mm</td><td>576 dots</td></tr>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Images</h2>
+      <p>
+        Pictures are reduced to 1bpp here, in the browser, and embedded in the
+        generated header as a byte array. The device prints those bits unchanged,
+        so what you see in the preview is what comes out — there is no second
+        reduction on the device to disagree with the first.
+      </p>
+    </div>
+  </div>
+</div>

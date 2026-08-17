@@ -1,0 +1,73 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Label — PaperCanvas</title>
+<link rel="stylesheet" href="css/app.css">
+
+<header class="top">
+  <h1>PaperCanvas</h1>
+  <nav>
+    <a href="receipt.html">Receipt</a>
+    <a href="label.html" aria-current="page">Label</a>
+    <a href="index.html">Help</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <div>
+    <div class="panel" id="page-panel"></div>
+
+    <div class="panel">
+      <h2>Elements</h2>
+      <div class="elements" id="elements"></div>
+      <div class="row" style="margin-top:10px">
+        <select id="add-kind"></select>
+        <button id="add">+ add</button>
+        <button id="reset" class="danger" style="margin-left:auto">reset</button>
+      </div>
+    </div>
+
+    <div class="panel" id="data-panel"></div>
+      </div>
+
+  <div class="preview-wrap">
+    <div class="panel">
+      <h2>Preview</h2>
+      <div class="row" style="margin-bottom:8px">
+        <label>zoom
+          <select id="zoom">
+            <option value="1">1x</option>
+            <option value="2" selected>2x</option>
+            <option value="3">3x</option>
+            <option value="4">4x</option>
+          </select>
+        </label>
+        <button id="png" style="margin-left:auto">save PNG</button>
+      </div>
+      <div class="paper" id="paper"><div class="loading">loading fonts…</div></div>
+      <div class="meta" id="meta"></div>
+      <p class="hint">
+        Click an element to select it, then drag to move it or drag the corner
+        handle to resize. One image pixel per printer dot; glyphs come from
+        lgfx-font-tool, which is verified against the real LovyanGFX.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>C++ output</h2>
+      <div class="row" style="margin-bottom:8px">
+        <button id="copy">copy</button>
+        <button id="download" class="primary">download .h</button>
+      </div>
+      <pre class="code" id="code"></pre>
+      <p class="hint">
+        Paste into your sketch, fill in the struct, call the build function.
+        Images are embedded as 1bpp and printed unchanged.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { start } from './src/label-page.js';
+  start();
+</script>

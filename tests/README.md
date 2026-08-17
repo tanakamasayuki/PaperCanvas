@@ -41,6 +41,7 @@ The first run downloads the core and libraries into the arduino-cli environment,
 
 - `barcode/` — barcode placement: whole-number scale, a blank quiet zone, extended guard bars, and nothing drawn when it will not fit. **The same test decodes the generated page with zxing-cpp and requires the input back.**
 - `js_parity/` — **does the browser tool's preview match what the device prints?** The same text is rendered by PaperCanvas (C++) and by [lgfx-font-tool](https://www.npmjs.com/package/lgfx-font-tool) (JS), and the 1bpp pages must be byte-identical. **The only test that needs Node.**
+- `gencheck/` — **does the tool's generated C++ actually compile and run?** Committed headers are built here, and dropping an item must shorten the page. `MyReceipt.h` / `MyLabel.h` are generated output.
 - `build_lovyangfx/` / `build_m5unified/` — include order and library combinations
 
 ## Only js_parity needs Node

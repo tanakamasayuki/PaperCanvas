@@ -1,7 +1,14 @@
-"""Fit modes are easy to get right for one example and wrong in general.
+"""Fit modes, and the guarantee that prepared bits print unchanged.
 
-So the source is 4:1 and the box is 1:1, and the drawn extent is measured from
-the page. With a square source in a square box, Contain, Cover and Stretch all
+The browser tool dithers images in the browser and embeds the result, so the
+device has to print those bits exactly. That passthrough is a chain — 1:1
+sampling, then a threshold that maps 0/255 back to black/white — and if any link
+changed, the tool's preview would quietly stop matching the paper.
+
+The Fit modes are the other half.
+
+They are easy to get right for one example and wrong in general, so the source
+is 4:1 and the box is 1:1, and the drawn extent is measured from the page. With a square source in a square box, Contain, Cover and Stretch all
 produce the same rectangle and the test would prove nothing; with mismatched
 ratios each mode has to land somewhere different, and the aspect ratio is
 checkable.
@@ -14,6 +21,8 @@ FIT = re.compile(r"#FIT name=(\S+) w=(\d+) h=(\d+) x=(-?\d+) y=(-?\d+) warn=0x([
 
 EXPECTED = [
     "formats_agree",
+    "mono1bpp_passthrough",
+    "mono1bpp_passthrough_quiet",
     "invert_blanks_solid_black",
     "reduce_warns",
     "enlarge_does_not_warn",
